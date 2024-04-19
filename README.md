@@ -14,7 +14,9 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
 
 
 ## How to Use<a name="how-to-use"></a>
--  ...
+- After making code changes to file_processor.py - run: 
+  - `.\rebuild-app.bat
+`
 
 ## How to Create a Virtual Environment<a name="how-to-venv"></a>
 - Ensure Python is installed on your system
@@ -24,3 +26,14 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
 - Activate the virtual environment: `.\venv\Scripts\activate`
 - If you have a requirements.txt file:
   - Run: `pip install -r requirements.txt`
+
+
+Project Directory:
+Amazon-Inventory-Checker-App
+| - build/
+| - dist/
+| - venv/
+| - file_processor.py
+| - file_processor.spec
+| - requirements.txt
+
