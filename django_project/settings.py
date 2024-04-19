@@ -11,13 +11,10 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
-import dj_database_url
 import os
-import re 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
@@ -26,30 +23,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-default-key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DJANGO_DEBUG', '').lower() in ['true', 'on', '1', 'yes']
+DEBUG = True
 
-def sanitize_env_hosts(raw_hosts):
-    if raw_hosts:
-        pattern = r'https?://|www\.|/$'  
-        sanitized = [re.sub(pattern, '', host).strip() for host in raw_hosts.split(',')]
-        return sanitized
-    return ['localhost']  
-
-raw_hosts = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost')
-
-ALLOWED_HOSTS = sanitize_env_hosts(raw_hosts)
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 CORS_ORIGIN_ALLOW_ALL = False
 
-def get_cors_whitelist(hosts_string, schemes=['http', 'https']):
-    hosts = sanitize_env_hosts(hosts_string)
-    return [f"{scheme}://{host}" for scheme in schemes for host in hosts]
-
-CORS_ORIGIN_WHITELIST = get_cors_whitelist(os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost'))
-
-
-
-# Application definition
+CORS_ORIGIN_WHITELIST = [
+    'http://localhost:5000', 
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -101,7 +83,10 @@ WSGI_APPLICATION = 'django_project.wsgi.application'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
 DATABASES = {
-    'default': dj_database_url.config(default='postgres://user:password@localhost/dbname', conn_max_age=600)
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
 }
 
 # Password validation
