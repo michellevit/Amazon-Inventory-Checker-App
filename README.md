@@ -32,6 +32,10 @@ Project Directory:
 Amazon-Inventory-Checker-App
 | - build/
 | - dist/
+| | - file_processor
+| - resources
+| | - app_icon.ico
+| - uploaded_files/
 | - venv/
 | - file_processor.py
 | - file_processor.spec

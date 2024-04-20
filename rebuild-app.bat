@@ -1,0 +1,18 @@
+@echo off
+SETLOCAL
+
+REM Ensure the script is run from the project root directory
+cd /d "%~dp0"
+
+REM Delete existing build directories
+echo Cleaning up old builds...
+rmdir /s /q build dist
+
+REM Build the application with PyInstaller
+echo Building the application...
+pyinstaller --onefile --windowed --icon=resources\app_icon.ico file_processor.py
+
+echo Build complete. Executable can be found in the dist directory.
+
+ENDLOCAL
+pause
