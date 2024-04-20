@@ -7,6 +7,8 @@ from openpyxl.workbook import Workbook
 import xlrd
 import subprocess
 import os
+import sys
+from calculate_inventory import calculate_inventory
 
 def browse_files():
     file_path.set(filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx *.xls")]))
@@ -30,20 +32,29 @@ def process_file():
         return
 
     try:
-        original_file_path = file_path.get()
-        base_folder = os.path.dirname(original_file_path)
-        new_path = os.path.join(base_folder, 'temp.xlsx')
+        if getattr(sys, 'frozen', False):
+            # running in a bundle (executable)
+            # running the script from an executable file in the dist folder
+            application_path = os.path.dirname(sys.executable)
+        else:
+            # running live
+            # i.e. running the script directly through your Python interpreter, such as through a command line with a command like python file_processor.py
+            application_path = os.path.dirname(os.path.abspath(__file__))
 
+        uploaded_files_dir = os.path.join(application_path, '..', 'uploaded_files')
+        os.makedirs(uploaded_files_dir, exist_ok=True)
+        new_path = os.path.join(uploaded_files_dir, 'temp.xlsx')
+
+        # Convert xls to xlsx if necessary
         if file_path.get().endswith('.xls'):
             convert_xls_to_xlsx(file_path.get(), new_path)
-            file_path.set(new_path)
+            file_path.set(new_path)  # Update the file path to the new xlsx file
 
         workbook = openpyxl.load_workbook(file_path.get())
         if 'Line Items' in workbook.sheetnames:
             sheet = workbook['Line Items']
             if sheet['A3'].value == 'Order/PO Number':
-                python_exec_path = os.path.join(project_root_dir, 'venv', 'Scripts', 'python.exe')
-                subprocess.run([python_exec_path, 'calculate_inventory.py', file_path.get()], check=True)
+                calculate_inventory(file_path)
                 messagebox.showinfo("Success", "File has been processed and saved successfully.")
             else:
                 messagebox.showerror("Error", "The cell A3 in 'Line Items' does not contain 'Order/PO Number'.")
