@@ -66,6 +66,7 @@ def calculate_inventory(workbook):
         else:
             requested_inventory[model_number] = quantity_ordered
 
+    requested_inventory = dict(sorted(requested_inventory.items()))
     return requested_inventory, currency
 
 

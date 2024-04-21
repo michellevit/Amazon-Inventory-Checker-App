@@ -92,14 +92,14 @@ def display_inventory_form(requested_inventory, currency, original_path):
     button_frame.grid(row=len(requested_inventory) + 1, column=0, columnspan=3, pady=15) 
     copy_button = ttk.Button(button_frame, text="Copy", command=lambda: copy_to_clipboard(currency, requested_inventory))
     copy_button.pack(side=tk.LEFT, padx=5)
-    submit_button = ttk.Button(button_frame, text="Submit", command=lambda: submit_inventory(entries, original_path))
+    submit_button = ttk.Button(button_frame, text="Submit", command=lambda: submit_inventory(entries, requested_inventory, original_path, currency))
     submit_button.pack(side=tk.LEFT, padx=5)  
 
 
-def submit_inventory(entries, original_path):
-    accepted_inventory = {model: int(entry.get()) for model, entry in entries.items()}
-    review_inventory(accepted_inventory, original_path, min_order_value)
-    messagebox.showinfo("Notice", "Inventory processed.")
+def submit_inventory(entries, requested_inventory, original_path, currency):
+    available_inventory = {model: int(entry.get()) for model, entry in entries.items()}
+    confirmation_message = review_inventory(requested_inventory, available_inventory, original_path, min_order_value, currency)
+    messagebox.showinfo("Notice", confirmation_message)
     toggle_order_value_edit(True)
     file_path.set('')
     clear_frame(inventory_frame)
@@ -126,17 +126,17 @@ def toggle_order_value_edit(show):
 def setup_gui():
     root = tk.Tk()
     root.title("Amazon Confirmation Processor")
-    root.geometry('500x500')
-
+    root.geometry('500x600')
+    
     global file_path, file_entry, min_order_value, temp_order_value, order_value_label, order_value_entry, change_button, order_value_frame, inventory_frame, entries, canvas
     file_path = tk.StringVar()
     min_order_value = tk.StringVar(value=str(load_min_order_value())) 
     temp_order_value = tk.StringVar()
     entries = {}
 
+    # Main Frame
     main_frame = ttk.Frame(root, padding=10)
     main_frame.pack(fill=tk.BOTH, expand=True)
-
 
     # Minimum Order Value Frame
     order_value_container = ttk.Frame(main_frame)
@@ -151,36 +151,21 @@ def setup_gui():
     change_button.pack(side=tk.LEFT, padx=(10, 0))
     toggle_order_value_edit(True)
 
-
-    # File input frame setup
+    # File Input Frame
     file_input_frame = ttk.Frame(main_frame, padding=10)
     file_input_frame.pack(fill=tk.X, pady=10)
-
-    # Container frame for file input elements
     file_input_container = ttk.Frame(file_input_frame)
     file_input_container.pack(pady=5)
-
-    # "Select File:" Label
     select_file_label = ttk.Label(file_input_container, text="Select File:")
     select_file_label.pack(side=tk.LEFT, padx=5, pady=5)
-
-    # File Entry
     file_entry = ttk.Entry(file_input_container, textvariable=file_path, state='readonly', width=50, style='White.TEntry')
     file_entry.pack(side=tk.LEFT, padx=5, pady=5)
-
-    # Browse Button
     browse_button = ttk.Button(file_input_container, text="Browse", command=browse_files)
     browse_button.pack(side=tk.LEFT, padx=5, pady=5)
-
-    # Centering the file_input_container within file_input_frame
     file_input_container.pack_configure(expand=True)
     file_input_container.pack_configure(side=tk.TOP)
-
-    # Process button setup on a new row
     process_button = ttk.Button(file_input_frame, text="Process", command=process_file)
     process_button.pack(pady=10)
-
-
 
     # Separator for visual distinction
     ttk.Separator(main_frame).pack(fill=tk.X, pady=5)
@@ -195,28 +180,22 @@ def setup_gui():
     inventory_frame = ttk.Frame(canvas)
     inventory_width = 450
 
-    # Initially center the inventory frame
+    # Inventory Frame 
     inventory_x_position = (canvas.winfo_reqwidth() - inventory_width) // 2
     window = canvas.create_window((inventory_x_position, 0), window=inventory_frame, anchor='n', width=inventory_width)
-
     canvas.configure(yscrollcommand=scrollbar.set)
-
     inventory_frame.grid_columnconfigure(0, weight=1, minsize=150)
     inventory_frame.grid_columnconfigure(1, weight=1, minsize=150)
     inventory_frame.grid_columnconfigure(2, weight=1, minsize=150)
-
     def onCanvasConfigure(event):
         """Adjust the window's position to stay centered."""
         nonlocal window
         inventory_x_position = (event.width - inventory_width) // 2
         canvas.coords(window, (inventory_x_position, 0))
-
     canvas.bind("<Configure>", onCanvasConfigure)
-
     def onFrameConfigure(canvas):
         """Update the scroll region to encompass the inner frame."""
         canvas.configure(scrollregion=canvas.bbox("all"))
-
     inventory_frame.bind("<Configure>", lambda event, canvas=canvas: onFrameConfigure(canvas))
 
     root.mainloop()
