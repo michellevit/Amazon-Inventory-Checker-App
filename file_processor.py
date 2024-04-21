@@ -1,95 +1,226 @@
 # file_processor.py
 
+import json
+import openpyxl
+import os
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
-import openpyxl
-from openpyxl.workbook import Workbook
-import xlrd
-import subprocess
-import os
-import sys
-from calculate_inventory import calculate_inventory
+from scripts.step_1_scripts import convert_xls_to_xlsx, check_file_valid, calculate_inventory, copy_to_clipboard
+from scripts.step_2_scripts import review_inventory, convert_xlsx_to_xls
+
+
+def load_min_order_value():
+    try:
+        with open('min_order_value.json', 'r') as file:
+            data = json.load(file)
+            return data['min_order_value']
+    except (FileNotFoundError, KeyError, json.JSONDecodeError):
+        print("Error with min_order_value")
+        return 380
+
+
+def save_min_order_value(value):
+    with open('min_order_value.json', 'w') as file:
+        json.dump({'min_order_value': value}, file)
+
 
 def browse_files():
     file_path.set(filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx *.xls")]))
-
-
-def convert_xls_to_xlsx(src_file_path, dst_file_path):
-    book_xls = xlrd.open_workbook(src_file_path)  
-    book_xlsx = Workbook()  
-    sheet_xls = book_xls.sheet_by_name('Line Items') 
-    sheet_xlsx = book_xlsx.active 
-    sheet_xlsx.title = 'Line Items'  
-    for row in range(sheet_xls.nrows):
-        for col in range(sheet_xls.ncols):
-            sheet_xlsx.cell(row=row + 1, column=col + 1).value = sheet_xls.cell_value(row, col)
-    book_xlsx.save(dst_file_path)
+    clear_frame(inventory_frame)  
 
 
 def process_file():
     if not file_path.get():
         messagebox.showerror("Error", "Please select a file first!")
         return
-
     try:
-        if getattr(sys, 'frozen', False):
-            # running in a bundle (executable)
-            # running the script from an executable file in the dist folder
-            application_path = os.path.dirname(sys.executable)
+        original_path = file_path.get()
+        temp_path = None
+        if original_path.endswith('.xls'):
+            workbook = convert_xls_to_xlsx(original_path)
+        elif original_path.endswith('.xlsx'):
+            directory, original_filename = os.path.split(original_path)
+            filename_without_extension, _ = os.path.splitext(original_filename)
+            new_filename = f"{filename_without_extension} - temp.xlsx"
+            temp_path = os.path.join(directory, new_filename)
+            os.rename(original_path, temp_path)
+            workbook = openpyxl.load_workbook(temp_path)
+        if check_file_valid(workbook):
+            requested_inventory, currency = calculate_inventory(workbook)
+            display_inventory_form(requested_inventory, currency, original_path)
+            toggle_order_value_edit(False)
+            if temp_path:
+                os.remove(temp_path)
+                os.rename(temp_path, original_path)
         else:
-            # running live
-            # i.e. running the script directly through your Python interpreter, such as through a command line with a command like python file_processor.py
-            application_path = os.path.dirname(os.path.abspath(__file__))
-
-        uploaded_files_dir = os.path.join(application_path, '..', 'uploaded_files')
-        os.makedirs(uploaded_files_dir, exist_ok=True)
-        new_path = os.path.join(uploaded_files_dir, 'temp.xlsx')
-
-        # Convert xls to xlsx if necessary
-        if file_path.get().endswith('.xls'):
-            convert_xls_to_xlsx(file_path.get(), new_path)
-            file_path.set(new_path)  # Update the file path to the new xlsx file
-
-        workbook = openpyxl.load_workbook(file_path.get())
-        if 'Line Items' in workbook.sheetnames:
-            sheet = workbook['Line Items']
-            if sheet['A3'].value == 'Order/PO Number':
-                calculate_inventory(file_path)
-                messagebox.showinfo("Success", "File has been processed and saved successfully.")
-            else:
-                messagebox.showerror("Error", "The cell A3 in 'Line Items' does not contain 'Order/PO Number'.")
-        else:
-            messagebox.showerror("Error", "The 'Line Items' sheet does not exist in the workbook.")
+            messagebox.showerror("Error", "The file is not supported by this program.")
     except Exception as e:
         messagebox.showerror("Error", f"Failed to process the file: {str(e)}")
+        if temp_path and os.path.exists(temp_path):
+            os.rename(temp_path, original_path)
 
 
-# Create the main window
-root = tk.Tk()
-root.title("Excel File Processor")
+def change_order_value():
+    try:
+        value = int(temp_order_value.get())
+        if not (0 < value < 10000):
+            raise ValueError("Value must be between 1 and 9999.")
+        save_min_order_value(value)
+        min_order_value.set(str(value))
+        order_value_label.config(text=f"Minimum Order Value: ${min_order_value.get()}")
+        messagebox.showinfo("Success", "Minimum order value updated.")
+        temp_order_value.set('') 
+    except ValueError as e:
+        messagebox.showerror("Error", "Invalid input. Please enter a whole number between 1 and 9999.")
 
-# Layout configuration
-root.grid_columnconfigure(0, weight=1)
-root.grid_rowconfigure(0, weight=1)
 
-# Variables
-file_path = tk.StringVar()
+def display_inventory_form(requested_inventory, currency, original_path):
+    clear_frame(inventory_frame)  
+    bold_font = ('Helvetica', 9, 'bold')
+    ttk.Label(inventory_frame, text="Model Number", font=bold_font, anchor="center").grid(row=0, column=0, sticky='ew', padx=5, pady=5)
+    ttk.Label(inventory_frame, text="Requested", font=bold_font, anchor="center").grid(row=0, column=1, sticky='ew', padx=5, pady=5)
+    ttk.Label(inventory_frame, text="Available", font=bold_font, anchor="center").grid(row=0, column=2, sticky='ew', padx=5, pady=5)
+    for idx, (model, quantity) in enumerate(requested_inventory.items(), start=1):
+        ttk.Label(inventory_frame, text=model).grid(row=idx, column=0)
+        ttk.Label(inventory_frame, text=str(quantity)).grid(row=idx, column=1)
+        entry = ttk.Entry(inventory_frame, width=10, justify=tk.CENTER)
+        entry.insert(0, str(quantity))
+        entry.grid(row=idx, column=2)
+        entries[model] = entry
+    # Buttons Frame
+    button_frame = ttk.Frame(inventory_frame)
+    button_frame.grid(row=len(requested_inventory) + 1, column=0, columnspan=3, pady=15) 
+    copy_button = ttk.Button(button_frame, text="Copy", command=lambda: copy_to_clipboard(currency, requested_inventory))
+    copy_button.pack(side=tk.LEFT, padx=5)
+    submit_button = ttk.Button(button_frame, text="Submit", command=lambda: submit_inventory(entries, original_path))
+    submit_button.pack(side=tk.LEFT, padx=5)  
 
-# Widgets
-frame = ttk.Frame(root, padding=10)
-frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
-label = ttk.Label(frame, text="Select an Excel File:")
-label.grid(column=0, row=0, sticky=tk.W, pady=(0, 10))
+def submit_inventory(entries, original_path):
+    accepted_inventory = {model: int(entry.get()) for model, entry in entries.items()}
+    review_inventory(accepted_inventory, original_path, min_order_value)
+    messagebox.showinfo("Notice", "Inventory processed.")
+    toggle_order_value_edit(True)
+    file_path.set('')
+    clear_frame(inventory_frame)
+    inventory_frame.pack_forget()
 
-file_entry = ttk.Entry(frame, textvariable=file_path, width=50)
-file_entry.grid(column=1, row=0, sticky=(tk.W, tk.E))
 
-browse_button = ttk.Button(frame, text="Browse", command=browse_files)
-browse_button.grid(column=2, row=0, sticky=tk.W)
+def clear_frame(frame):
+    for widget in frame.winfo_children():
+        widget.destroy()
 
-process_button = ttk.Button(frame, text="Process File", command=process_file)
-process_button.grid(column=1, row=1, pady=(10, 0))
 
-# Start the GUI
-root.mainloop()
+def toggle_order_value_edit(show):
+    if show:
+        temp_order_value.set('')
+        order_value_entry.pack(side=tk.LEFT, padx=5)
+        change_button.pack(side=tk.LEFT, padx=5)
+    else:
+        order_value_entry.pack_forget()
+        change_button.pack_forget()
+    order_value_label.config(text=f"Minimum Order Value: ${min_order_value.get()}")
+
+
+
+def setup_gui():
+    root = tk.Tk()
+    root.title("Amazon Confirmation Processor")
+    root.geometry('500x500')
+
+    global file_path, file_entry, min_order_value, temp_order_value, order_value_label, order_value_entry, change_button, order_value_frame, inventory_frame, entries, canvas
+    file_path = tk.StringVar()
+    min_order_value = tk.StringVar(value=str(load_min_order_value())) 
+    temp_order_value = tk.StringVar()
+    entries = {}
+
+    main_frame = ttk.Frame(root, padding=10)
+    main_frame.pack(fill=tk.BOTH, expand=True)
+
+
+    # Minimum Order Value Frame
+    order_value_container = ttk.Frame(main_frame)
+    order_value_container.pack(fill=tk.X, pady=10)
+    order_value_frame = ttk.Frame(order_value_container, padding=10)
+    order_value_frame.pack()
+    order_value_label = ttk.Label(order_value_frame, text=f"Minimum Order Value: ${min_order_value.get()}")
+    order_value_label.pack(side=tk.LEFT, padx=(0, 15))
+    order_value_entry = ttk.Entry(order_value_frame, textvariable=temp_order_value, width=4)
+    order_value_entry.pack(side=tk.LEFT)
+    change_button = ttk.Button(order_value_frame, text="Change", command=change_order_value)
+    change_button.pack(side=tk.LEFT, padx=(10, 0))
+    toggle_order_value_edit(True)
+
+
+    # File input frame setup
+    file_input_frame = ttk.Frame(main_frame, padding=10)
+    file_input_frame.pack(fill=tk.X, pady=10)
+
+    # Container frame for file input elements
+    file_input_container = ttk.Frame(file_input_frame)
+    file_input_container.pack(pady=5)
+
+    # "Select File:" Label
+    select_file_label = ttk.Label(file_input_container, text="Select File:")
+    select_file_label.pack(side=tk.LEFT, padx=5, pady=5)
+
+    # File Entry
+    file_entry = ttk.Entry(file_input_container, textvariable=file_path, state='readonly', width=50, style='White.TEntry')
+    file_entry.pack(side=tk.LEFT, padx=5, pady=5)
+
+    # Browse Button
+    browse_button = ttk.Button(file_input_container, text="Browse", command=browse_files)
+    browse_button.pack(side=tk.LEFT, padx=5, pady=5)
+
+    # Centering the file_input_container within file_input_frame
+    file_input_container.pack_configure(expand=True)
+    file_input_container.pack_configure(side=tk.TOP)
+
+    # Process button setup on a new row
+    process_button = ttk.Button(file_input_frame, text="Process", command=process_file)
+    process_button.pack(pady=10)
+
+
+
+    # Separator for visual distinction
+    ttk.Separator(main_frame).pack(fill=tk.X, pady=5)
+
+    # Setup for scrolling and dynamic centering
+    scroll_frame = ttk.Frame(main_frame)
+    scroll_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+    canvas = tk.Canvas(scroll_frame, highlightthickness=0)
+    scrollbar = ttk.Scrollbar(scroll_frame, orient="vertical", command=canvas.yview)
+    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+    canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+    inventory_frame = ttk.Frame(canvas)
+    inventory_width = 450
+
+    # Initially center the inventory frame
+    inventory_x_position = (canvas.winfo_reqwidth() - inventory_width) // 2
+    window = canvas.create_window((inventory_x_position, 0), window=inventory_frame, anchor='n', width=inventory_width)
+
+    canvas.configure(yscrollcommand=scrollbar.set)
+
+    inventory_frame.grid_columnconfigure(0, weight=1, minsize=150)
+    inventory_frame.grid_columnconfigure(1, weight=1, minsize=150)
+    inventory_frame.grid_columnconfigure(2, weight=1, minsize=150)
+
+    def onCanvasConfigure(event):
+        """Adjust the window's position to stay centered."""
+        nonlocal window
+        inventory_x_position = (event.width - inventory_width) // 2
+        canvas.coords(window, (inventory_x_position, 0))
+
+    canvas.bind("<Configure>", onCanvasConfigure)
+
+    def onFrameConfigure(canvas):
+        """Update the scroll region to encompass the inner frame."""
+        canvas.configure(scrollregion=canvas.bbox("all"))
+
+    inventory_frame.bind("<Configure>", lambda event, canvas=canvas: onFrameConfigure(canvas))
+
+    root.mainloop()
+
+
+if __name__ == "__main__":
+    setup_gui()
