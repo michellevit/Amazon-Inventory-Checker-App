@@ -9,32 +9,55 @@ from scripts.step_1_scripts import convert_xls_to_xlsx, check_file_valid, calcul
 from scripts.step_2_scripts import review_inventory, convert_xlsx_to_xls
 
 
-def load_min_order_value():
+def load_min_order_value(currency):
     try:
         with open('min_order_value.json', 'r') as file:
             data = json.load(file)
-            return data['min_order_value']
+            if currency == 'us':
+                return data['min_order_value_us']
+            else:
+                return data['min_order_value_ca']
     except (FileNotFoundError, KeyError, json.JSONDecodeError):
         print("Error with min_order_value")
         return 380
 
 
-def save_min_order_value(value):
+def save_min_order_value(currency, value):
+    try:
+        with open('min_order_value.json', 'r') as file:
+            data = json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        data = {}
+    if currency == 'us':
+        data['min_order_value_us'] = value
+    else:
+        data['min_order_value_ca'] = value
     with open('min_order_value.json', 'w') as file:
-        json.dump({'min_order_value': value}, file)
+        json.dump(data, file)
 
 
-def browse_files():
-    file_path.set(filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx *.xls")]))
+def browse_files(currency):
+    if currency == "us":
+        file_path_us.set(filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx *.xls")]))
+    else:
+        file_path_ca.set(filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx *.xls")]))
     clear_frame(inventory_frame)  
 
 
-def process_file():
-    if not file_path.get():
-        messagebox.showerror("Error", "Please select a file first!")
+def process_files():
+    if not file_path_ca.get() and not file_path_us.get():
+        messagebox.showerror("Error", "Please select at least one file first.")
         return
+    if file_path_us.get():
+        process_file(file_path_us.get(), 'us')
+    if file_path_ca.get():
+        process_file(file_path_ca.get(), 'ca')
+    toggle_order_value_edit('na', False)
+
+
+def process_file(file_path, currency):
     try:
-        original_path = file_path.get()
+        original_path = file_path
         temp_path = None
         if original_path.endswith('.xls'):
             workbook = convert_xls_to_xlsx(original_path)
@@ -45,31 +68,40 @@ def process_file():
             temp_path = os.path.join(directory, new_filename)
             os.rename(original_path, temp_path)
             workbook = openpyxl.load_workbook(temp_path)
-        if check_file_valid(workbook):
-            requested_inventory, currency = calculate_inventory(workbook)
+        if check_file_valid(workbook, currency):
+            requested_inventory = calculate_inventory(workbook)
             display_inventory_form(requested_inventory, currency, original_path)
-            toggle_order_value_edit(False)
             if temp_path:
                 os.remove(temp_path)
                 os.rename(temp_path, original_path)
-        else:
-            messagebox.showerror("Error", "The file is not supported by this program.")
     except Exception as e:
         messagebox.showerror("Error", f"Failed to process the file: {str(e)}")
         if temp_path and os.path.exists(temp_path):
             os.rename(temp_path, original_path)
 
 
-def change_order_value():
+def change_order_value(currency):
     try:
-        value = int(temp_order_value.get())
+        if currency == 'us':
+            temp_value = temp_order_value_us.get()
+            min_order_value_var = min_order_value_us
+            order_value_label_var = order_value_label_us
+        else:
+            temp_value = temp_order_value_ca.get()
+            min_order_value_var = min_order_value_ca
+            order_value_label_var = order_value_label_ca
+
+        value = int(temp_value)
         if not (0 < value < 10000):
             raise ValueError("Value must be between 1 and 9999.")
-        save_min_order_value(value)
-        min_order_value.set(str(value))
-        order_value_label.config(text=f"Minimum Order Value: ${min_order_value.get()}")
-        messagebox.showinfo("Success", "Minimum order value updated.")
-        temp_order_value.set('') 
+        save_min_order_value(currency, value)
+        min_order_value_var.set(str(value))
+        order_value_label_var.config(text=f"Minimum Order Value: {currency.upper()}D ${value}")
+        if currency == 'us':
+            temp_order_value_us.set('')
+        else:
+            temp_order_value_ca.set('')
+        messagebox.showinfo("Success", f"Minimum order value for {currency.upper()} updated.")
     except ValueError as e:
         messagebox.showerror("Error", "Invalid input. Please enter a whole number between 1 and 9999.")
 
@@ -100,8 +132,8 @@ def submit_inventory(entries, requested_inventory, original_path, currency):
     available_inventory = {model: int(entry.get()) for model, entry in entries.items()}
     confirmation_message = review_inventory(requested_inventory, available_inventory, original_path, min_order_value, currency)
     messagebox.showinfo("Notice", confirmation_message)
-    toggle_order_value_edit(True)
-    file_path.set('')
+    toggle_order_value_edit(currency, True)
+    original_path.set('')
     clear_frame(inventory_frame)
     inventory_frame.pack_forget()
 
@@ -111,60 +143,103 @@ def clear_frame(frame):
         widget.destroy()
 
 
-def toggle_order_value_edit(show):
+def toggle_order_value_edit(currency, show):
     if show:
-        temp_order_value.set('')
-        order_value_entry.pack(side=tk.LEFT, padx=5)
-        change_button.pack(side=tk.LEFT, padx=5)
+        if currency == "us":
+            temp_order_value_us.set('')
+            order_value_entry_us.pack(side=tk.LEFT, padx=5)
+            change_button_us.pack(side=tk.LEFT, padx=5)
+        else:
+            temp_order_value_ca.set('')
+            order_value_entry_ca.pack(side=tk.LEFT, padx=5)
+            change_button_ca.pack(side=tk.LEFT, padx=5)
     else:
-        order_value_entry.pack_forget()
-        change_button.pack_forget()
-    order_value_label.config(text=f"Minimum Order Value: ${min_order_value.get()}")
+        order_value_entry_us.pack_forget()
+        order_value_entry_ca.pack_forget()
+        change_button_us.pack_forget()
+        change_button_ca.pack_forget()
 
 
 
 def setup_gui():
     root = tk.Tk()
     root.title("Amazon Confirmation Processor")
-    root.geometry('500x600')
-    
-    global file_path, file_entry, min_order_value, temp_order_value, order_value_label, order_value_entry, change_button, order_value_frame, inventory_frame, entries, canvas
-    file_path = tk.StringVar()
-    min_order_value = tk.StringVar(value=str(load_min_order_value())) 
-    temp_order_value = tk.StringVar()
+    root.geometry('800x600')
+
+    global file_path_us, file_entry_us, min_order_value_us, temp_order_value_us
+    global file_path_ca, file_entry_ca, min_order_value_ca, temp_order_value_ca
+    global order_value_label_us, order_value_entry_us, change_button_us
+    global order_value_label_ca, order_value_entry_ca, change_button_ca
+    global inventory_frame, entries, canvas
+
+    # Variables for US file input
+    file_path_us = tk.StringVar()
+    min_order_value_us = tk.StringVar(value=str(load_min_order_value('us')))
+    temp_order_value_us = tk.StringVar()
+
+    # Variables for CA file input
+    file_path_ca = tk.StringVar()
+    min_order_value_ca = tk.StringVar(value=str(load_min_order_value('ca')))
+    temp_order_value_ca = tk.StringVar()
+
     entries = {}
 
     # Main Frame
     main_frame = ttk.Frame(root, padding=10)
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    # Minimum Order Value Frame
-    order_value_container = ttk.Frame(main_frame)
-    order_value_container.pack(fill=tk.X, pady=10)
-    order_value_frame = ttk.Frame(order_value_container, padding=10)
-    order_value_frame.pack()
-    order_value_label = ttk.Label(order_value_frame, text=f"Minimum Order Value: ${min_order_value.get()}")
-    order_value_label.pack(side=tk.LEFT, padx=(0, 15))
-    order_value_entry = ttk.Entry(order_value_frame, textvariable=temp_order_value, width=4)
-    order_value_entry.pack(side=tk.LEFT)
-    change_button = ttk.Button(order_value_frame, text="Change", command=change_order_value)
-    change_button.pack(side=tk.LEFT, padx=(10, 0))
-    toggle_order_value_edit(True)
+    # US File Input Frame
+    us_frame = ttk.Frame(main_frame)
+    us_frame.pack(fill=tk.X, pady=10)
 
-    # File Input Frame
-    file_input_frame = ttk.Frame(main_frame, padding=10)
-    file_input_frame.pack(fill=tk.X, pady=10)
-    file_input_container = ttk.Frame(file_input_frame)
-    file_input_container.pack(pady=5)
-    select_file_label = ttk.Label(file_input_container, text="Select File:")
-    select_file_label.pack(side=tk.LEFT, padx=5, pady=5)
-    file_entry = ttk.Entry(file_input_container, textvariable=file_path, state='readonly', width=50, style='White.TEntry')
-    file_entry.pack(side=tk.LEFT, padx=5, pady=5)
-    browse_button = ttk.Button(file_input_container, text="Browse", command=browse_files)
-    browse_button.pack(side=tk.LEFT, padx=5, pady=5)
-    file_input_container.pack_configure(expand=True)
-    file_input_container.pack_configure(side=tk.TOP)
-    process_button = ttk.Button(file_input_frame, text="Process", command=process_file)
+    # US File Input Frame
+    file_input_frame_us = ttk.Frame(us_frame, padding=5)
+    file_input_frame_us.pack(side=tk.LEFT, padx=5)
+    select_file_label_us = ttk.Label(file_input_frame_us, text="Amazon US File:")
+    select_file_label_us.pack(side=tk.LEFT, padx=5, pady=5)
+    file_entry_us = ttk.Entry(file_input_frame_us, textvariable=file_path_us, state='readonly', width=50, style='White.TEntry')
+    file_entry_us.pack(side=tk.LEFT, padx=5, pady=5)
+    browse_button_us = ttk.Button(file_input_frame_us, text="Browse", command=lambda: browse_files('us'))
+    browse_button_us.pack(side=tk.LEFT, padx=5, pady=5)
+
+    # US Minimum Order Value Frame
+    order_value_frame_us = ttk.Frame(us_frame, padding=5)
+    order_value_frame_us.pack(side=tk.LEFT, padx=5)
+    order_value_label_us = ttk.Label(order_value_frame_us, text=f"Minimum Order Value: USD ${min_order_value_us.get()}")
+    order_value_label_us.pack(side=tk.LEFT)
+    order_value_entry_us = ttk.Entry(order_value_frame_us, textvariable=temp_order_value_us, width=4)
+    order_value_entry_us.pack(side=tk.LEFT)
+    change_button_us = ttk.Button(order_value_frame_us, text="Change", command=lambda: change_order_value('us'))
+    change_button_us.pack(side=tk.LEFT)
+    toggle_order_value_edit('us', True)
+
+    # CA File Input Frame
+    ca_frame = ttk.Frame(main_frame)
+    ca_frame.pack(fill=tk.X, pady=5)
+
+    # CA File Input Frame
+    file_input_frame_ca = ttk.Frame(ca_frame, padding=5)
+    file_input_frame_ca.pack(side=tk.LEFT, padx=5)
+    select_file_label_ca = ttk.Label(file_input_frame_ca, text="Amazon CA File:")
+    select_file_label_ca.pack(side=tk.LEFT, padx=5, pady=5)
+    file_entry_ca = ttk.Entry(file_input_frame_ca, textvariable=file_path_ca, state='readonly', width=50, style='White.TEntry')
+    file_entry_ca.pack(side=tk.LEFT, padx=5, pady=5)
+    browse_button_ca = ttk.Button(file_input_frame_ca, text="Browse", command=lambda: browse_files('ca'))
+    browse_button_ca.pack(side=tk.LEFT, padx=5, pady=5)
+
+    # CA Minimum Order Value Frame
+    order_value_frame_ca = ttk.Frame(ca_frame, padding=5)
+    order_value_frame_ca.pack(side=tk.LEFT, padx=5)
+    order_value_label_ca = ttk.Label(order_value_frame_ca, text=f"Minimum Order Value: CAD ${min_order_value_ca.get()}")
+    order_value_label_ca.pack(side=tk.LEFT)
+    order_value_entry_ca = ttk.Entry(order_value_frame_ca, textvariable=temp_order_value_ca, width=4)
+    order_value_entry_ca.pack(side=tk.LEFT)
+    change_button_ca = ttk.Button(order_value_frame_ca, text="Change", command=lambda: change_order_value('ca'))
+    change_button_ca.pack(side=tk.LEFT)
+    toggle_order_value_edit('ca', True)
+
+    # Process Button
+    process_button = ttk.Button(main_frame, text="Process", command=process_files)
     process_button.pack(pady=10)
 
     # Separator for visual distinction
@@ -180,22 +255,26 @@ def setup_gui():
     inventory_frame = ttk.Frame(canvas)
     inventory_width = 450
 
-    # Inventory Frame 
+    # Inventory Frame
     inventory_x_position = (canvas.winfo_reqwidth() - inventory_width) // 2
     window = canvas.create_window((inventory_x_position, 0), window=inventory_frame, anchor='n', width=inventory_width)
     canvas.configure(yscrollcommand=scrollbar.set)
     inventory_frame.grid_columnconfigure(0, weight=1, minsize=150)
     inventory_frame.grid_columnconfigure(1, weight=1, minsize=150)
     inventory_frame.grid_columnconfigure(2, weight=1, minsize=150)
+
     def onCanvasConfigure(event):
         """Adjust the window's position to stay centered."""
         nonlocal window
         inventory_x_position = (event.width - inventory_width) // 2
         canvas.coords(window, (inventory_x_position, 0))
+
     canvas.bind("<Configure>", onCanvasConfigure)
+
     def onFrameConfigure(canvas):
         """Update the scroll region to encompass the inner frame."""
         canvas.configure(scrollregion=canvas.bbox("all"))
+
     inventory_frame.bind("<Configure>", lambda event, canvas=canvas: onFrameConfigure(canvas))
 
     root.mainloop()
