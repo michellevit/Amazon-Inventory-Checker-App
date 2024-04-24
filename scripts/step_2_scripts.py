@@ -4,27 +4,20 @@ import os
 import shutil
 
 
-def review_inventory(requested_inventory, available_inventory, original_path, min_order_value, currency):
-    if currency == "USD":
-        country = "US"
-    elif currency == "CAD":
-        country = "Canadian"
-    else: 
-        country = ""
+def review_inventory(requested_inventory, available_inventory):
+    print('hi')
 
-    if requested_inventory == available_inventory: 
-        print('Do nothing!')
-        directory, filename = os.path.split(original_path)
-        name, extension = os.path.splitext(filename)
-        new_name = name + ' - complete' + extension
-        new_path = os.path.join(directory, new_name)
-        shutil.copyfile(original_path, new_path)
-
-    else:
-        print("UHOH")
-        
-    confirmation_message = (f"File has been processed\n\nThe completed file will be in the same folder as the original Amazon vendor download file, and it will be named: \n\n '{new_name}'\n\nSubmit this NEW file to Amazon to confirm the {country} orders.")
-    return confirmation_message
+    # if requested_inventory == available_inventory: 
+    #     print('Do nothing!')
+    #     directory, filename = os.path.split(original_path)
+    #     name, extension = os.path.splitext(filename)
+    #     new_name = name + ' - complete' + extension
+    #     new_path = os.path.join(directory, new_name)
+    #     shutil.copyfile(original_path, new_path)
+    # else:
+    #     print("UHOH")
+    # confirmation_message = (f"File has been processed\n\nThe completed file will be in the same folder as the original Amazon vendor download file, and it will be named: \n\n '{new_name}'\n\nSubmit this NEW file to Amazon to confirm the {country} orders.")
+    # return confirmation_message
 
 
     # use xldr to read the file at original_path

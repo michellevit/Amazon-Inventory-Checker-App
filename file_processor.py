@@ -5,7 +5,7 @@ import openpyxl
 import os
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
-from scripts.step_1_scripts import convert_xls_to_xlsx, check_file_valid, calculate_inventory, copy_to_clipboard
+from scripts.step_1_scripts import convert_xls_to_xlsx, check_file_valid, calculate_inventory, find_vendor_origins, copy_to_clipboard
 from scripts.step_2_scripts import review_inventory, convert_xlsx_to_xls
 
 
@@ -48,14 +48,20 @@ def process_files():
     if not file_path_ca.get() and not file_path_us.get():
         messagebox.showerror("Error", "Please select at least one file first.")
         return
+    requested_inventory = {}
+    submitted_files = {}
     if file_path_us.get():
-        process_file(file_path_us.get(), 'us')
+        requested_inventory = process_file(file_path_us.get(), 'us', requested_inventory)
+        submitted_files['us'] = True
     if file_path_ca.get():
-        process_file(file_path_ca.get(), 'ca')
+        requested_inventory = process_file(file_path_ca.get(), 'ca', requested_inventory)
+        submitted_files['ca'] = True
+    vendor_origins = find_vendor_origins(submitted_files)    
     toggle_order_value_edit('na', False)
+    display_inventory_form(requested_inventory, vendor_origins)
 
 
-def process_file(file_path, currency):
+def process_file(file_path, currency, requested_inventory):
     try:
         original_path = file_path
         temp_path = None
@@ -69,15 +75,16 @@ def process_file(file_path, currency):
             os.rename(original_path, temp_path)
             workbook = openpyxl.load_workbook(temp_path)
         if check_file_valid(workbook, currency):
-            requested_inventory = calculate_inventory(workbook)
-            display_inventory_form(requested_inventory, currency, original_path)
+            requested_inventory = calculate_inventory(workbook, requested_inventory)
             if temp_path:
                 os.remove(temp_path)
                 os.rename(temp_path, original_path)
+            return requested_inventory
     except Exception as e:
         messagebox.showerror("Error", f"Failed to process the file: {str(e)}")
         if temp_path and os.path.exists(temp_path):
             os.rename(temp_path, original_path)
+        raise 
 
 
 def change_order_value(currency):
@@ -106,7 +113,7 @@ def change_order_value(currency):
         messagebox.showerror("Error", "Invalid input. Please enter a whole number between 1 and 9999.")
 
 
-def display_inventory_form(requested_inventory, currency, original_path):
+def display_inventory_form(requested_inventory, vendor_origins):
     clear_frame(inventory_frame)  
     bold_font = ('Helvetica', 9, 'bold')
     ttk.Label(inventory_frame, text="Model Number", font=bold_font, anchor="center").grid(row=0, column=0, sticky='ew', padx=5, pady=5)
@@ -122,18 +129,22 @@ def display_inventory_form(requested_inventory, currency, original_path):
     # Buttons Frame
     button_frame = ttk.Frame(inventory_frame)
     button_frame.grid(row=len(requested_inventory) + 1, column=0, columnspan=3, pady=15) 
-    copy_button = ttk.Button(button_frame, text="Copy", command=lambda: copy_to_clipboard(currency, requested_inventory))
+    clear_button = ttk.Button(button_frame, text="Clear", command=reset)
+    clear_button.pack(side=tk.LEFT, padx=5)  
+    copy_button = ttk.Button(button_frame, text="Copy", command=lambda: copy_to_clipboard(requested_inventory, vendor_origins))
     copy_button.pack(side=tk.LEFT, padx=5)
-    submit_button = ttk.Button(button_frame, text="Submit", command=lambda: submit_inventory(entries, requested_inventory, original_path, currency))
-    submit_button.pack(side=tk.LEFT, padx=5)  
+    submit_button = ttk.Button(button_frame, text="Submit", command=lambda: submit_inventory(entries, requested_inventory))
+    submit_button.pack(side=tk.LEFT, padx=5)
 
 
-def submit_inventory(entries, requested_inventory, original_path, currency):
+def submit_inventory(entries, requested_inventory):
     available_inventory = {model: int(entry.get()) for model, entry in entries.items()}
-    confirmation_message = review_inventory(requested_inventory, available_inventory, original_path, min_order_value, currency)
+    confirmation_message = review_inventory(requested_inventory, available_inventory)
     messagebox.showinfo("Notice", confirmation_message)
-    toggle_order_value_edit(currency, True)
-    original_path.set('')
+    toggle_order_value_edit('us', True)
+    toggle_order_value_edit('ca', True)
+    file_path_us.set('')
+    file_path_ca.set('')
     clear_frame(inventory_frame)
     inventory_frame.pack_forget()
 
@@ -141,6 +152,15 @@ def submit_inventory(entries, requested_inventory, original_path, currency):
 def clear_frame(frame):
     for widget in frame.winfo_children():
         widget.destroy()
+
+
+def reset():
+    toggle_order_value_edit('us', True)
+    toggle_order_value_edit('ca', True)
+    file_path_us.set('')
+    file_path_ca.set('')
+    clear_frame(inventory_frame)
+    inventory_frame.pack_forget()   
 
 
 def toggle_order_value_edit(currency, show):
@@ -164,7 +184,7 @@ def toggle_order_value_edit(currency, show):
 def setup_gui():
     root = tk.Tk()
     root.title("Amazon Confirmation Processor")
-    root.geometry('800x600')
+    root.geometry('850x600')
 
     global file_path_us, file_entry_us, min_order_value_us, temp_order_value_us
     global file_path_ca, file_entry_ca, min_order_value_ca, temp_order_value_ca
@@ -185,15 +205,16 @@ def setup_gui():
     entries = {}
 
     # Main Frame
-    main_frame = ttk.Frame(root, padding=10)
-    main_frame.pack(fill=tk.BOTH, expand=True)
+    main_frame = ttk.Frame(root)
+    main_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=10)
+
+    # US Container Frame
+    us_container_frame = ttk.Frame(main_frame)
+    us_container_frame.pack(pady=10)
+
 
     # US File Input Frame
-    us_frame = ttk.Frame(main_frame)
-    us_frame.pack(fill=tk.X, pady=10)
-
-    # US File Input Frame
-    file_input_frame_us = ttk.Frame(us_frame, padding=5)
+    file_input_frame_us = ttk.Frame(us_container_frame, padding=5)
     file_input_frame_us.pack(side=tk.LEFT, padx=5)
     select_file_label_us = ttk.Label(file_input_frame_us, text="Amazon US File:")
     select_file_label_us.pack(side=tk.LEFT, padx=5, pady=5)
@@ -203,8 +224,8 @@ def setup_gui():
     browse_button_us.pack(side=tk.LEFT, padx=5, pady=5)
 
     # US Minimum Order Value Frame
-    order_value_frame_us = ttk.Frame(us_frame, padding=5)
-    order_value_frame_us.pack(side=tk.LEFT, padx=5)
+    order_value_frame_us = ttk.Frame(us_container_frame, padding=5)
+    order_value_frame_us.pack(side=tk.RIGHT, padx=5)
     order_value_label_us = ttk.Label(order_value_frame_us, text=f"Minimum Order Value: USD ${min_order_value_us.get()}")
     order_value_label_us.pack(side=tk.LEFT)
     order_value_entry_us = ttk.Entry(order_value_frame_us, textvariable=temp_order_value_us, width=4)
@@ -213,12 +234,12 @@ def setup_gui():
     change_button_us.pack(side=tk.LEFT)
     toggle_order_value_edit('us', True)
 
-    # CA File Input Frame
-    ca_frame = ttk.Frame(main_frame)
-    ca_frame.pack(fill=tk.X, pady=5)
+    # CA Container Frame
+    ca_container_frame = ttk.Frame(main_frame)
+    ca_container_frame.pack(pady=5)
 
     # CA File Input Frame
-    file_input_frame_ca = ttk.Frame(ca_frame, padding=5)
+    file_input_frame_ca = ttk.Frame(ca_container_frame, padding=5)
     file_input_frame_ca.pack(side=tk.LEFT, padx=5)
     select_file_label_ca = ttk.Label(file_input_frame_ca, text="Amazon CA File:")
     select_file_label_ca.pack(side=tk.LEFT, padx=5, pady=5)
@@ -228,8 +249,8 @@ def setup_gui():
     browse_button_ca.pack(side=tk.LEFT, padx=5, pady=5)
 
     # CA Minimum Order Value Frame
-    order_value_frame_ca = ttk.Frame(ca_frame, padding=5)
-    order_value_frame_ca.pack(side=tk.LEFT, padx=5)
+    order_value_frame_ca = ttk.Frame(ca_container_frame, padding=5)
+    order_value_frame_ca.pack(side=tk.RIGHT, padx=5)
     order_value_label_ca = ttk.Label(order_value_frame_ca, text=f"Minimum Order Value: CAD ${min_order_value_ca.get()}")
     order_value_label_ca.pack(side=tk.LEFT)
     order_value_entry_ca = ttk.Entry(order_value_frame_ca, textvariable=temp_order_value_ca, width=4)
@@ -245,18 +266,19 @@ def setup_gui():
     # Separator for visual distinction
     ttk.Separator(main_frame).pack(fill=tk.X, pady=5)
 
-    # Setup for scrolling and dynamic centering
+     # Setup for scrolling
     scroll_frame = ttk.Frame(main_frame)
     scroll_frame.pack(fill=tk.BOTH, expand=True, pady=10)
-    canvas = tk.Canvas(scroll_frame, highlightthickness=0)
+    canvas = tk.Canvas(scroll_frame, width=root.winfo_screenwidth(), highlightthickness=0)
     scrollbar = ttk.Scrollbar(scroll_frame, orient="vertical", command=canvas.yview)
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
     canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     inventory_frame = ttk.Frame(canvas)
-    inventory_width = 450
+    inventory_width = 400
 
     # Inventory Frame
-    inventory_x_position = (canvas.winfo_reqwidth() - inventory_width) // 2
+    window_width = root.winfo_reqwidth()
+    inventory_x_position = (window_width - inventory_width) // 2
     window = canvas.create_window((inventory_x_position, 0), window=inventory_frame, anchor='n', width=inventory_width)
     canvas.configure(yscrollcommand=scrollbar.set)
     inventory_frame.grid_columnconfigure(0, weight=1, minsize=150)
@@ -264,9 +286,12 @@ def setup_gui():
     inventory_frame.grid_columnconfigure(2, weight=1, minsize=150)
 
     def onCanvasConfigure(event):
-        """Adjust the window's position to stay centered."""
-        nonlocal window
-        inventory_x_position = (event.width - inventory_width) // 2
+        nonlocal window, inventory_width
+        root.update_idletasks()
+        window_width = event.width
+        inventory_width = 400
+        inventory_x_position = (window_width - inventory_width) // 2
+        canvas.itemconfig(window, width=inventory_width)
         canvas.coords(window, (inventory_x_position, 0))
 
     canvas.bind("<Configure>", onCanvasConfigure)
@@ -276,7 +301,6 @@ def setup_gui():
         canvas.configure(scrollregion=canvas.bbox("all"))
 
     inventory_frame.bind("<Configure>", lambda event, canvas=canvas: onFrameConfigure(canvas))
-
     root.mainloop()
 
 

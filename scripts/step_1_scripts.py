@@ -19,17 +19,16 @@ def convert_xls_to_xlsx(original_path):
 
 
 def check_file_valid(workbook, currency):
-    currency = currency.upper()
+    capitalized_currency = currency.upper()
     if 'Line Items' not in workbook.sheetnames:
         raise ValueError("The file entered is not valid (it does not have a 'Line Items' tab).")
     sheet = workbook['Line Items']
-    if currency not in sheet['I4'].value:
+    if capitalized_currency not in sheet['AF4'].value:
         raise ValueError("The file entered is not the correct currency")
     return True
 
 
-def calculate_inventory(workbook):
-    requested_inventory = {}
+def calculate_inventory(workbook, requested_inventory):
     sheet = workbook['Line Items']
     for row in range(4, sheet.max_row + 1):
         model_number = sheet[f'C{row}'].value
@@ -50,14 +49,16 @@ def calculate_inventory(workbook):
     return requested_inventory
 
 
-def copy_to_clipboard(currency, inventory_dict):
-    if currency == "USD":
-        vendor = "Amazon US"
-    elif currency == "CAD":
-        vendor = "Amazon CA"
-    else:
-        vendor = "Amazon"
-    clipboard_text = f"{vendor} - Requested Items:\n" 
+def find_vendor_origins(submitted_files):
+    if len(submitted_files) == 2:
+        return "Amazon US + CA"
+    elif "us" in submitted_files:
+        return "Amazon US"
+    else: 
+        return "Amazon CA"
+
+def copy_to_clipboard(inventory_dict, vendor_origins):
+    clipboard_text = f"{vendor_origins}: Requested Items:\n" 
     lines = [f"{model}: {quantity}" for model, quantity in inventory_dict.items()]
     clipboard_text += "\n".join(lines) 
     pyperclip.copy(clipboard_text)
