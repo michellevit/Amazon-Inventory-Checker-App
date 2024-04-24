@@ -58,7 +58,7 @@ def find_vendor_origins(submitted_files):
         return "Amazon CA"
 
 def copy_to_clipboard(inventory_dict, vendor_origins):
-    clipboard_text = f"{vendor_origins}: Requested Items:\n" 
+    clipboard_text = f"{vendor_origins} - Requested Items:\n" 
     lines = [f"{model}: {quantity}" for model, quantity in inventory_dict.items()]
     clipboard_text += "\n".join(lines) 
     pyperclip.copy(clipboard_text)

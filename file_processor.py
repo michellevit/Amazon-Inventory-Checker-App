@@ -116,25 +116,37 @@ def change_order_value(currency):
 def display_inventory_form(requested_inventory, vendor_origins):
     clear_frame(inventory_frame)  
     bold_font = ('Helvetica', 9, 'bold')
-    ttk.Label(inventory_frame, text="Model Number", font=bold_font, anchor="center").grid(row=0, column=0, sticky='ew', padx=5, pady=5)
-    ttk.Label(inventory_frame, text="Requested", font=bold_font, anchor="center").grid(row=0, column=1, sticky='ew', padx=5, pady=5)
-    ttk.Label(inventory_frame, text="Available", font=bold_font, anchor="center").grid(row=0, column=2, sticky='ew', padx=5, pady=5)
+    
+    # Container frame for labels
+    inventory_form_container = ttk.Frame(inventory_frame)
+    inventory_form_container.grid(row=0, column=0, columnspan=3, pady=5)
+    
+    # Labels for Model Number, Requested, Available
+    ttk.Label(inventory_form_container, text="Model Number", font=bold_font, anchor="center", width=20).grid(row=0, column=0, sticky='ew', padx=5, pady=5)
+    ttk.Label(inventory_form_container, text="Requested", font=bold_font, anchor="center", width=20).grid(row=0, column=1, sticky='ew', padx=5, pady=5)
+    ttk.Label(inventory_form_container, text="Available", font=bold_font, anchor="center", width=20).grid(row=0, column=2, sticky='ew', padx=5, pady=5)
+
+    # Populate requested inventory data
     for idx, (model, quantity) in enumerate(requested_inventory.items(), start=1):
-        ttk.Label(inventory_frame, text=model).grid(row=idx, column=0)
-        ttk.Label(inventory_frame, text=str(quantity)).grid(row=idx, column=1)
-        entry = ttk.Entry(inventory_frame, width=10, justify=tk.CENTER)
+        ttk.Label(inventory_form_container, text=model, anchor="center", width=20, justify="center").grid(row=idx, column=0, sticky='ew')
+        ttk.Label(inventory_form_container, text=str(quantity), width=20, anchor="center", justify="center").grid(row=idx, column=1)
+        entry = ttk.Entry(inventory_form_container, width=10, justify=tk.CENTER)
         entry.insert(0, str(quantity))
-        entry.grid(row=idx, column=2)
+        entry.grid(row=idx, column=2, padx=5, pady=2)
         entries[model] = entry
+    
     # Buttons Frame
     button_frame = ttk.Frame(inventory_frame)
-    button_frame.grid(row=len(requested_inventory) + 1, column=0, columnspan=3, pady=15) 
+    button_frame.grid(row=1, column=0, columnspan=3, pady=10) 
     clear_button = ttk.Button(button_frame, text="Clear", command=reset)
     clear_button.pack(side=tk.LEFT, padx=5)  
     copy_button = ttk.Button(button_frame, text="Copy", command=lambda: copy_to_clipboard(requested_inventory, vendor_origins))
     copy_button.pack(side=tk.LEFT, padx=5)
     submit_button = ttk.Button(button_frame, text="Submit", command=lambda: submit_inventory(entries, requested_inventory))
     submit_button.pack(side=tk.LEFT, padx=5)
+    
+    # Pack the inventory frame back into the main frame
+    inventory_frame.pack(fill=tk.BOTH, expand=True)
 
 
 def submit_inventory(entries, requested_inventory):
@@ -178,7 +190,6 @@ def toggle_order_value_edit(currency, show):
         order_value_entry_ca.pack_forget()
         change_button_us.pack_forget()
         change_button_ca.pack_forget()
-
 
 
 def setup_gui():
@@ -264,43 +275,15 @@ def setup_gui():
     process_button.pack(pady=10)
 
     # Separator for visual distinction
-    ttk.Separator(main_frame).pack(fill=tk.X, pady=5)
-
-     # Setup for scrolling
-    scroll_frame = ttk.Frame(main_frame)
-    scroll_frame.pack(fill=tk.BOTH, expand=True, pady=10)
-    canvas = tk.Canvas(scroll_frame, width=root.winfo_screenwidth(), highlightthickness=0)
-    scrollbar = ttk.Scrollbar(scroll_frame, orient="vertical", command=canvas.yview)
-    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-    canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-    inventory_frame = ttk.Frame(canvas)
-    inventory_width = 400
+    ttk.Separator(main_frame).pack(fill=tk.X, pady=10)
 
     # Inventory Frame
-    window_width = root.winfo_reqwidth()
-    inventory_x_position = (window_width - inventory_width) // 2
-    window = canvas.create_window((inventory_x_position, 0), window=inventory_frame, anchor='n', width=inventory_width)
-    canvas.configure(yscrollcommand=scrollbar.set)
+    inventory_frame = ttk.Frame(main_frame)
+    process_button.pack(pady=10)
     inventory_frame.grid_columnconfigure(0, weight=1, minsize=150)
     inventory_frame.grid_columnconfigure(1, weight=1, minsize=150)
     inventory_frame.grid_columnconfigure(2, weight=1, minsize=150)
 
-    def onCanvasConfigure(event):
-        nonlocal window, inventory_width
-        root.update_idletasks()
-        window_width = event.width
-        inventory_width = 400
-        inventory_x_position = (window_width - inventory_width) // 2
-        canvas.itemconfig(window, width=inventory_width)
-        canvas.coords(window, (inventory_x_position, 0))
-
-    canvas.bind("<Configure>", onCanvasConfigure)
-
-    def onFrameConfigure(canvas):
-        """Update the scroll region to encompass the inner frame."""
-        canvas.configure(scrollregion=canvas.bbox("all"))
-
-    inventory_frame.bind("<Configure>", lambda event, canvas=canvas: onFrameConfigure(canvas))
     root.mainloop()
 
 
