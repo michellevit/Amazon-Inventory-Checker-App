@@ -192,10 +192,14 @@ def toggle_order_value_edit(currency, show):
         change_button_ca.pack_forget()
 
 
+def on_inner_frame_configure(event):
+    canvas.configure(scrollregion=canvas.bbox("all"))
+
+
 def setup_gui():
     root = tk.Tk()
     root.title("Amazon Confirmation Processor")
-    root.geometry('850x600')
+    root.geometry('850x300')
 
     global file_path_us, file_entry_us, min_order_value_us, temp_order_value_us
     global file_path_ca, file_entry_ca, min_order_value_ca, temp_order_value_ca
@@ -217,12 +221,28 @@ def setup_gui():
 
     # Main Frame
     main_frame = ttk.Frame(root)
-    main_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=10)
+    main_frame.pack(fill=tk.BOTH, expand=True)
+
+    # Canvas
+    canvas = tk.Canvas(main_frame)
+    canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+    # Add scrollbar to canvas
+    scrollbar = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=canvas.yview)
+    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+    # Configure canvas
+    canvas.configure(yscrollcommand=scrollbar.set)
+    canvas.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox('all')))
+
+    # Create another frame inside the canvas
+    inner_main_frame = ttk.Frame(canvas)
+    canvas.create_window((0,0), window=inner_main_frame, anchor="nw")
+    inner_main_frame.bind("<Configure>", on_inner_frame_configure)    
 
     # US Container Frame
-    us_container_frame = ttk.Frame(main_frame)
+    us_container_frame = ttk.Frame(inner_main_frame)
     us_container_frame.pack(pady=10)
-
 
     # US File Input Frame
     file_input_frame_us = ttk.Frame(us_container_frame, padding=5)
@@ -246,7 +266,7 @@ def setup_gui():
     toggle_order_value_edit('us', True)
 
     # CA Container Frame
-    ca_container_frame = ttk.Frame(main_frame)
+    ca_container_frame = ttk.Frame(inner_main_frame)
     ca_container_frame.pack(pady=5)
 
     # CA File Input Frame
@@ -271,18 +291,21 @@ def setup_gui():
     toggle_order_value_edit('ca', True)
 
     # Process Button
-    process_button = ttk.Button(main_frame, text="Process", command=process_files)
+    process_button = ttk.Button(inner_main_frame, text="Process", command=process_files)
     process_button.pack(pady=10)
 
     # Separator for visual distinction
-    ttk.Separator(main_frame).pack(fill=tk.X, pady=10)
+    ttk.Separator(inner_main_frame).pack(fill=tk.X, pady=10)
 
     # Inventory Frame
-    inventory_frame = ttk.Frame(main_frame)
+    inventory_frame = ttk.Frame(inner_main_frame)
     process_button.pack(pady=10)
     inventory_frame.grid_columnconfigure(0, weight=1, minsize=150)
     inventory_frame.grid_columnconfigure(1, weight=1, minsize=150)
     inventory_frame.grid_columnconfigure(2, weight=1, minsize=150)
+
+    root.update_idletasks()
+    canvas.configure(scrollregion=canvas.bbox("all")) 
 
     root.mainloop()
 
