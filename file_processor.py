@@ -114,26 +114,26 @@ def change_order_value(currency):
 
 def display_inventory_form(requested_inventory, vendor_origins, filename_array, po_value_dict):
     clear_frame(inventory_frame)  
-    if all(value == 0.0 for value in requested_inventory.values()):
-        if len(filename_array) == 1:
-            file_or_files = "file"
-            filename_message = f"New filename: {filename_array[0]}"
-        else:
-            file_or_files = "files"
-            filename_message = f"New {file_or_files}: \n\n{filename_array[0]}\n\n{filename_array[1]}"
-        message = ("All orders are below the 'Minimum Order Value'.\n\nInstructions:\nPlease find the 'completed' file "
-                   "(with all orders marked as cancelled) in the same folder as the original "
-                   "Amazon Vendor Download and upload it to Amazon.\n\n" + filename_message)
-        message_frame = ttk.Frame(inventory_frame)
-        message_frame.grid(row=0, column=0, columnspan=3, padx=10, pady=10)
-        label = ttk.Label(message_frame, text=message, wraplength=400, anchor='center', justify='center')
-        label.grid(row=0, column=0, columnspan=3, sticky='ew')
-        button_frame = ttk.Frame(inventory_frame)
-        button_frame.grid(row=1, column=0, columnspan=3, pady=10)
-        clear_button = ttk.Button(button_frame, text="Clear", command=reset)
-        clear_button.pack(side=tk.LEFT, padx=5)  
-        inventory_frame.pack(fill=tk.BOTH, expand=True)
-        return
+    #if all(value == 0.0 for value in requested_inventory.values()):
+        # if len(filename_array) == 1:
+        #     file_or_files = "file"
+        #     filename_message = f"New filename: {filename_array[0]}"
+        # else:
+        #     file_or_files = "files"
+        #     filename_message = f"New {file_or_files}: \n\n{filename_array[0]}\n\n{filename_array[1]}"
+        # message = ("All orders are below the 'Minimum Order Value'.\n\nInstructions:\nPlease find the 'completed' file "
+        #            "(with all orders marked as cancelled) in the same folder as the original "
+        #            "Amazon Vendor Download and upload it to Amazon.\n\n" + filename_message)
+        # message_frame = ttk.Frame(inventory_frame)
+        # message_frame.grid(row=0, column=0, columnspan=3, padx=10, pady=10)
+        # label = ttk.Label(message_frame, text=message, wraplength=400, anchor='center', justify='center')
+        # label.grid(row=0, column=0, columnspan=3, sticky='ew')
+        # button_frame = ttk.Frame(inventory_frame)
+        # button_frame.grid(row=1, column=0, columnspan=3, pady=10)
+        # clear_button = ttk.Button(button_frame, text="Clear", command=reset)
+        # clear_button.pack(side=tk.LEFT, padx=5)  
+        # inventory_frame.pack(fill=tk.BOTH, expand=True)
+        # return
 
     bold_font = ('Helvetica', 9, 'bold')
 
