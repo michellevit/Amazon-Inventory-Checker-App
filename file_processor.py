@@ -5,7 +5,7 @@ import openpyxl
 import os
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
-from scripts.step_1_scripts import convert_xls_to_xlsx, check_file_valid, calculate_inventory, find_vendor_origins, copy_to_clipboard
+from scripts.step_1_scripts import convert_xls_to_xlsx, create_new_file, check_file_valid, cancel_orders_below_min, calculate_inventory, find_vendor_origins, copy_to_clipboard
 from scripts.step_2_scripts import review_inventory, convert_xlsx_to_xls
 
 
@@ -50,40 +50,39 @@ def process_files():
         return
     requested_inventory = {}
     submitted_files = {}
+    filename_array = []
+    po_value_dict = {}
     if file_path_us.get():
-        requested_inventory = process_file(file_path_us.get(), 'us', requested_inventory)
+        requested_inventory, new_filename, po_value_dict = process_file(file_path_us.get(), 'us', requested_inventory, po_value_dict)
+        filename_array.append(new_filename)
         submitted_files['us'] = True
     if file_path_ca.get():
-        requested_inventory = process_file(file_path_ca.get(), 'ca', requested_inventory)
+        requested_inventory, new_filename, po_value_dict = process_file(file_path_ca.get(), 'ca', requested_inventory, po_value_dict)
+        filename_array.append(new_filename)
         submitted_files['ca'] = True
-    vendor_origins = find_vendor_origins(submitted_files)    
+    vendor_origins = find_vendor_origins(submitted_files)
+    
     toggle_order_value_edit('na', False)
-    display_inventory_form(requested_inventory, vendor_origins)
+    display_inventory_form(requested_inventory, vendor_origins, filename_array, po_value_dict)
 
 
-def process_file(file_path, currency, requested_inventory):
+def process_file(file_path, currency, requested_inventory, po_value_dict):
     try:
         original_path = file_path
-        temp_path = None
         if original_path.endswith('.xls'):
-            workbook = convert_xls_to_xlsx(original_path)
-        elif original_path.endswith('.xlsx'):
-            directory, original_filename = os.path.split(original_path)
-            filename_without_extension, _ = os.path.splitext(original_filename)
-            new_filename = f"{filename_without_extension} - temp.xlsx"
-            temp_path = os.path.join(directory, new_filename)
-            os.rename(original_path, temp_path)
-            workbook = openpyxl.load_workbook(temp_path)
+            workbook, new_filename, new_file_path = convert_xls_to_xlsx(original_path, currency)
+        else:
+            workbook, new_filename, new_file_path = create_new_file(original_path, currency)
         if check_file_valid(workbook, currency):
+            if currency == 'us':
+                min_order_value = min_order_value_us
+            else:
+                min_order_value = min_order_value_ca
+            workbook = cancel_orders_below_min(workbook, min_order_value, new_file_path, po_value_dict)
             requested_inventory = calculate_inventory(workbook, requested_inventory)
-            if temp_path:
-                os.remove(temp_path)
-                os.rename(temp_path, original_path)
-            return requested_inventory
+            return requested_inventory, new_filename, po_value_dict
     except Exception as e:
         messagebox.showerror("Error", f"Failed to process the file: {str(e)}")
-        if temp_path and os.path.exists(temp_path):
-            os.rename(temp_path, original_path)
         raise 
 
 
@@ -113,10 +112,31 @@ def change_order_value(currency):
         messagebox.showerror("Error", "Invalid input. Please enter a whole number between 1 and 9999.")
 
 
-def display_inventory_form(requested_inventory, vendor_origins):
+def display_inventory_form(requested_inventory, vendor_origins, filename_array, po_value_dict):
     clear_frame(inventory_frame)  
+    if all(value == 0.0 for value in requested_inventory.values()):
+        if len(filename_array) == 1:
+            file_or_files = "file"
+            filename_message = f"New filename: {filename_array[0]}"
+        else:
+            file_or_files = "files"
+            filename_message = f"New {file_or_files}: \n\n{filename_array[0]}\n\n{filename_array[1]}"
+        message = ("All orders are below the 'Minimum Order Value'.\n\nInstructions:\nPlease find the 'completed' file "
+                   "(with all orders marked as cancelled) in the same folder as the original "
+                   "Amazon Vendor Download and upload it to Amazon.\n\n" + filename_message)
+        message_frame = ttk.Frame(inventory_frame)
+        message_frame.grid(row=0, column=0, columnspan=3, padx=10, pady=10)
+        label = ttk.Label(message_frame, text=message, wraplength=400, anchor='center', justify='center')
+        label.grid(row=0, column=0, columnspan=3, sticky='ew')
+        button_frame = ttk.Frame(inventory_frame)
+        button_frame.grid(row=1, column=0, columnspan=3, pady=10)
+        clear_button = ttk.Button(button_frame, text="Clear", command=reset)
+        clear_button.pack(side=tk.LEFT, padx=5)  
+        inventory_frame.pack(fill=tk.BOTH, expand=True)
+        return
+
     bold_font = ('Helvetica', 9, 'bold')
-    
+
     # Container frame for labels
     inventory_form_container = ttk.Frame(inventory_frame)
     inventory_form_container.grid(row=0, column=0, columnspan=3, pady=5)
