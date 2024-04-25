@@ -199,7 +199,7 @@ def on_inner_frame_configure(event):
 def setup_gui():
     root = tk.Tk()
     root.title("Amazon Confirmation Processor")
-    root.geometry('850x300')
+    root.geometry('850x600')
 
     global file_path_us, file_entry_us, min_order_value_us, temp_order_value_us
     global file_path_ca, file_entry_ca, min_order_value_ca, temp_order_value_ca
@@ -233,12 +233,12 @@ def setup_gui():
 
     # Configure canvas
     canvas.configure(yscrollcommand=scrollbar.set)
-    canvas.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox('all')))
-
-    # Create another frame inside the canvas
     inner_main_frame = ttk.Frame(canvas)
-    canvas.create_window((0,0), window=inner_main_frame, anchor="nw")
-    inner_main_frame.bind("<Configure>", on_inner_frame_configure)    
+    canvas_window = canvas.create_window((0, 0), window=inner_main_frame, anchor='nw')
+
+    canvas.bind('<Configure>', lambda e: update_canvas_window(canvas, inner_main_frame, canvas_window))
+    inner_main_frame.bind("<Configure>", lambda e: on_inner_frame_configure(e, canvas))
+    
 
     # US Container Frame
     us_container_frame = ttk.Frame(inner_main_frame)
@@ -308,6 +308,22 @@ def setup_gui():
     canvas.configure(scrollregion=canvas.bbox("all")) 
 
     root.mainloop()
+
+def update_canvas_window(canvas, frame, canvas_window):
+    new_width = canvas.winfo_width()
+    canvas.itemconfig(canvas_window, width=new_width)  
+    frame.update_idletasks()  
+    adjust_frame_center(canvas, frame, canvas_window)
+
+def adjust_frame_center(canvas, frame, canvas_window):
+    canvas_width = canvas.winfo_width()
+    frame_width = frame.winfo_reqwidth()
+    coord_x = max((canvas_width - frame_width) // 2, 0)
+    canvas.coords(canvas_window, coord_x, 0)
+    canvas.configure(scrollregion=canvas.bbox("all"))
+
+def on_inner_frame_configure(event, canvas):
+    canvas.configure(scrollregion=canvas.bbox("all"))
 
 
 if __name__ == "__main__":

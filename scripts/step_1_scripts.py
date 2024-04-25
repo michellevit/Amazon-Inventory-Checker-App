@@ -28,6 +28,30 @@ def check_file_valid(workbook, currency):
     return True
 
 
+def cancel_orders_below_min(workbook, min_value):
+    sheet = workbook['Line Items']
+    po_value_dict = {}
+    for row in range(4, sheet.max_row + 1):
+        if not sheet[f'A{row}'].value:
+            break
+        order_number = sheet[f'A{row}'].value
+        quantity_ordered = sheet[f'J{row}'].value
+        item_cost = sheet['I{row}'].value
+        line_item_value = quantity_ordered * item_cost
+        if order_number in po_value_dict:
+            po_value_dict[order_number] = po_value_dict[order_number].value + line_item_value
+        else:
+            po_value_dict[order_number] = line_item_value
+    orders_to_cancel_array = []
+    for key, value in po_value_dict.items():
+        if value < min_value:
+            orders_to_cancel_array.append(key)
+    for row in range(4, sheet.max_row + 1):
+        if not sheet[f'A{row}'].value:
+            break
+
+
+
 def calculate_inventory(workbook, requested_inventory):
     sheet = workbook['Line Items']
     for row in range(4, sheet.max_row + 1):
