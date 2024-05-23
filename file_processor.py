@@ -170,6 +170,10 @@ def display_inventory_form(requested_inventory, vendor_origins, filename_array, 
 
 
 def submit_inventory(entries, requested_inventory):
+    for item in requested_inventory:
+        print("Model Number: ", item, " | ", "Requested Qty: ", requested_inventory[item], " | ", "Available Qty: ", entries[item])
+    print("\nREQUESTED INV", requested_inventory)
+    return
     available_inventory = {model: int(entry.get()) for model, entry in entries.items()}
     confirmation_message = review_inventory(requested_inventory, available_inventory)
     messagebox.showinfo("Notice", confirmation_message)

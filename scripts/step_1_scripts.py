@@ -80,18 +80,16 @@ def cancel_orders_below_min(workbook, min_order_value, new_file_path, po_value_d
     for key, value in po_value_dict.items():
         if value < int(min_order_value.get()):
             orders_to_cancel_array.append(key)
-    for key in po_value_dict:
-        if key in orders_to_cancel_array:
-            po_value_dict[key] = 0.0
     for row in range(4, sheet.max_row + 1):
-        if not sheet[f'A{row}'].value:
+        order_number = sheet[f'A{row}'].value
+        if not order_number:
             break
         if order_number in orders_to_cancel_array:
             sheet[f'L{row}'].value = 0.0
             sheet[f'S{row}'].value = "CA - Cancelled: Not yet available"
-    print("PO Value Dict: ", po_value_dict)
-    print("Orders to cancel: ", orders_to_cancel_array)
-    # This is wrong !!!!!!!!!!!!!!!!!!!!!!!!
+    for key in po_value_dict:
+        if key in orders_to_cancel_array:
+            po_value_dict[key] = 0.0
     workbook.save(new_file_path)
     return workbook
 
@@ -101,19 +99,13 @@ def calculate_inventory(workbook, requested_inventory):
     sheet = workbook['Line Items']
     for row in range(4, sheet.max_row + 1):
         model_number = sheet[f'C{row}'].value
-        quantity_ordered = sheet[f'L{row}'].value
-        if not model_number or quantity_ordered is None:
+        quantity_confirmed = int(float(sheet[f'L{row}'].value))
+        if not model_number:
             break
-        try:
-            quantity_ordered = int(float(quantity_ordered))
-        except ValueError:
-            print(f"Cannot convert quantity ordered to int for row {row}.")
-            continue 
-        quantity_ordered = int(quantity_ordered)
         if model_number in requested_inventory:
-            requested_inventory[model_number] += quantity_ordered
+            requested_inventory[model_number] += quantity_confirmed
         else:
-            requested_inventory[model_number] = quantity_ordered
+            requested_inventory[model_number] = quantity_confirmed
     requested_inventory = dict(sorted(requested_inventory.items()))
     return requested_inventory
 
