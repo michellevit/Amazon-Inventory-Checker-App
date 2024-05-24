@@ -8,6 +8,7 @@ from tkinter import messagebox
 import xlrd
 
 
+
 def convert_xls_to_xlsx(original_path, currency):
     # Read the original workbook using xlrd
     book_xls = xlrd.open_workbook(original_path)
@@ -29,7 +30,8 @@ def convert_xls_to_xlsx(original_path, currency):
     # Save the new workbook in the same directory as the original
     book_xlsx
     # Return the new workbook object
-    return book_xlsx, new_filename,new_file_path
+    return book_xlsx, new_filename, new_file_path
+
 
 def create_new_file(original_path, currency):
     workbook = load_workbook(original_path)
@@ -47,10 +49,8 @@ def create_new_file(original_path, currency):
     capitalized_currency = currency.upper()
     new_filename = f"{filename_without_extension} - {capitalized_currency} Complete 1.xlsx"
     new_file_path = os.path.join(directory, new_filename)
-    
     new_workbook.save(new_file_path)
     return new_workbook, new_filename, new_file_path
-
 
 
 def check_file_valid(workbook, currency):
@@ -63,22 +63,25 @@ def check_file_valid(workbook, currency):
     return True
 
 
-def cancel_orders_below_min(workbook, min_order_value, new_file_path, po_value_dict):
+def cancel_orders_below_min(workbook, min_order_value, new_file_path, po_value_dict, orders_to_cancel_array):
     sheet = workbook['Line Items']
+    current_currency_orders = []
     for row in range(4, sheet.max_row + 1):
         if not sheet[f'A{row}'].value:
             break
         order_number = sheet[f'A{row}'].value
+        if order_number not in current_currency_orders:
+            current_currency_orders.append(order_number)
         quantity_ordered = sheet[f'J{row}'].value # Type = float
         item_cost = sheet[f'I{row}'].value # Type = float
         line_item_value = quantity_ordered * item_cost
+        line_item_value = round(line_item_value, 2)
         if order_number in po_value_dict:
             po_value_dict[order_number] = po_value_dict[order_number] + line_item_value
         else:
             po_value_dict[order_number] = line_item_value
-    orders_to_cancel_array = []
     for key, value in po_value_dict.items():
-        if value < int(min_order_value.get()):
+        if key in current_currency_orders and value < int(min_order_value):
             orders_to_cancel_array.append(key)
     for row in range(4, sheet.max_row + 1):
         order_number = sheet[f'A{row}'].value
@@ -91,21 +94,22 @@ def cancel_orders_below_min(workbook, min_order_value, new_file_path, po_value_d
         if key in orders_to_cancel_array:
             po_value_dict[key] = 0.0
     workbook.save(new_file_path)
-    return workbook
+    return workbook, orders_to_cancel_array
 
 
-
-def calculate_inventory(workbook, requested_inventory):
+def calculate_inventory(workbook, requested_inventory, orders_to_cancel_array):
     sheet = workbook['Line Items']
     for row in range(4, sheet.max_row + 1):
+        order_number = sheet[f'A{row}'].value
         model_number = sheet[f'C{row}'].value
         quantity_confirmed = int(float(sheet[f'L{row}'].value))
         if not model_number:
             break
-        if model_number in requested_inventory:
-            requested_inventory[model_number] += quantity_confirmed
-        else:
-            requested_inventory[model_number] = quantity_confirmed
+        if order_number not in orders_to_cancel_array: 
+            if model_number in requested_inventory:
+                requested_inventory[model_number] += quantity_confirmed
+            else:
+                requested_inventory[model_number] = quantity_confirmed
     requested_inventory = dict(sorted(requested_inventory.items()))
     return requested_inventory
 
@@ -117,6 +121,7 @@ def find_vendor_origins(submitted_files):
         return "Amazon US"
     else: 
         return "Amazon CA"
+
 
 def copy_to_clipboard(inventory_dict, vendor_origins):
     clipboard_text = f"{vendor_origins} - Requested Items:\n" 

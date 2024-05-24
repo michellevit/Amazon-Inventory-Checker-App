@@ -3,6 +3,7 @@
 
 ![Django Version](https://img.shields.io/badge/Django-4.0.3-0c4a30.svg)
 ![Python Version](https://img.shields.io/badge/Python-3.10.4-ffdb4f.svg)
+![Tkinter](https://img.shields.io/badge/Tkinter-3A77A8.svg)
 ![React Version](https://img.shields.io/badge/React-18.2.0-61dafb.svg)
 
 
@@ -10,14 +11,25 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
 
 
 ## Table of Contents
+- [Technologies Used](#technologies-used)
 - [How to Use](#how-to-use)
 - [How to Create a Virtual Environment](#how-to-venv)
-- [Troubelshooting](#troubleshooting)
+- [Troubleshooting](#troubleshooting)
+- [To Do](#to-do)
+- [Credits](#credits)
+
+
+## Technologies Used<a name="technologies-used"></a>
+- Python (3.10.0)
+- Tkinter
+- OpenPyXL Library
 
 
 ## How to Use<a name="how-to-use"></a>
 - After making code changes to file_processor.py - run: 
   - `.\rebuild-app.bat`
+- To run the app form the command line: 
+  - `.\dist\file_processor.exe`
 
 
 ## How to Create a Virtual Environment<a name="how-to-venv"></a>
@@ -34,6 +46,60 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
 - Make sure app is closed before running `.\rebuild-app`
 
 
+## To Do<a name="to-do"></a>
+- Create dict: items_to_cancel
+- First pass: 
+  - loop both sheets (new sheets): us sheet + ca sheet:
+    - for each line item, if model_number in items_to_cancel dict
+      - yes: 
+        - create var: model_number
+        - create var: order_number
+        - create var: quantity_confirmed (col L)
+        - create var one_unit_cost (col I)
+        - create var: min_order_value for that currency
+        - create var order_value[model_number]
+        - remove 1 unit cost from the new order_value var
+        - while quantity_confirmed > 0 and items_to_cancel[model_number] > 0 and order_value_var_ not below min_threshold:
+            - remove 1 unit from 'Quantity Confirmed' col
+            - remove 1 unit from quantity_confirmed var
+            - remove 1 unit from items_to_cancel[model_number] dict
+            - remove 1 unit from order_value[order_number] dict
+            - if value of items_to_cancel[model_number] is 0 then remove entry from dict
+- Second pass:
+  - If still items in the items_to_cancel dict
+  - remove entries in order_value_dict with value of zero 
+  - organize order_value_dict form lowest value to highest value
+  - for order in order_value_dict:
+    - for each line in sheet, if it matches the order number:
+      - check if the model_number is in the units_to_cancel dict:
+        - yes: 
+          - create var: model_number
+          - create var: order_number
+          - create var: quantity_confirmed (col L)
+          - create var one_unit_cost (col I)
+          - create var: min_order_value for that currency
+          - create var order_value[model_number]
+          - while quantity_confirmed > 0 and items_to_cancel[model_number] > 0: 
+            - remove 1 unit from 'Quantity Confirmed' col
+            - remove 1 unit from quantity_confirmed var
+            - remove 1 unit from items_to_cancel[model_number] dict
+            - remove 1 unit from order_value[order_number] dict
+            - if value of items_to_cancel[model_number] is 0 then remove entry from dict
+- Third pass: 
+  - Tabulate new order_value_dict based on new order values (after second pass)
+  - Tabulate a new order_to_cancel array (based on currency (col AF) and min_order_value)
+  - For each line item: 
+    - if order_number in orders_to_cancel array:
+      - yes:
+        - set 'Quantity Confirmed' col quantity to 0
+        - change 'Availability Status' col value to 'CA - Cancelled: Not yet available'
+
+
+## Credits<a name="credits"></a>
+Michelle Flandin
+
+
+
 Project Directory:
 Amazon-Inventory-Checker-App
 | - build/
@@ -46,44 +112,3 @@ Amazon-Inventory-Checker-App
 | - file_processor.py
 | - file_processor.spec
 | - requirements.txt
-
-
-
-*** 
-
-
-# Pull Request: Add Blog Subscription Feature
-
-## Summary
-This pull request introduces a new subscription feature to Andrew Paxson's website, enabling visitors to subscribe for email notifications whenever a new blog post is published. The feature leverages a Cloudflare Worker to handle API requests and integrates with Mailchimp for managing subscriptions and sending notifications.
-
-## Enhancements:
-
-### RSS Generator Script:
- - Added a script to generate an RSS feed (rss.xml) for blog posts.
-### Subscribe Component:
- - Implemented a Subscribe component that allows users to submit their email and first name to subscribe to blog updates.
-- Integrated the component into relevant pages of the website.
-
-### Cloudflare Worker:
- - Added reference code for a Cloudflare Worker (subscribe-worker.js) to handle API requests to Mailchimp.
-
-### README Updates:
-  - Updated the README with instructions for setting up the website on Cloudflare.
-  - Provided detailed steps for setting up the Cloudflare Worker and configuring a Mailchimp RSS-to-email campaign.
-
-## Important Notes:
-
-### Setup Required:
-
- - The subscription feature requires additional setup steps to function correctly. These steps involve configuring a Cloudflare Worker and setting up a Mailchimp RSS-to-email campaign.
-- Detailed setup instructions are provided in the README under the section 'How to Set Up the Blog Mailing List'
-
-### Why a Cloudflare Worker:
-- Cloudflare Workers provide a serverless solution for backend functionality, which is essential for the free tier as it does not support traditional backend services. This allows for handling API requests securely and efficiently.
-
-### Estimated Setup Time:
- - The entire setup process, including configuring Mailchimp and the Cloudflare Worker, should take less than 30 minutes.
-
-Please review the changes and let me know if there are any questions or further adjustments needed. Thank you!
-

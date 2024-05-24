@@ -1,12 +1,11 @@
 # file_processor.py
 
 import json
-import openpyxl
-import os
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from scripts.step_1_scripts import convert_xls_to_xlsx, create_new_file, check_file_valid, cancel_orders_below_min, calculate_inventory, find_vendor_origins, copy_to_clipboard
 from scripts.step_2_scripts import review_inventory, convert_xlsx_to_xls
+import pprint
 
 
 def load_min_order_value(currency):
@@ -34,6 +33,10 @@ def save_min_order_value(currency, value):
         data['min_order_value_ca'] = value
     with open('min_order_value.json', 'w') as file:
         json.dump(data, file)
+    if currency == 'us':
+        min_order_value_us.set(str(load_min_order_value('us')))
+    else:
+        min_order_value_ca.set(str(load_min_order_value('ca')))
 
 
 def browse_files(currency):
@@ -52,21 +55,21 @@ def process_files():
     submitted_files = {}
     filename_array = []
     po_value_dict = {}
+    orders_to_cancel_array = []
     if file_path_us.get():
-        requested_inventory, new_filename, po_value_dict = process_file(file_path_us.get(), 'us', requested_inventory, po_value_dict)
+        requested_inventory, new_filename, po_value_dict, orders_to_cancel_array = process_file(file_path_us.get(), 'us', requested_inventory, po_value_dict, orders_to_cancel_array)
         filename_array.append(new_filename)
         submitted_files['us'] = True
     if file_path_ca.get():
-        requested_inventory, new_filename, po_value_dict = process_file(file_path_ca.get(), 'ca', requested_inventory, po_value_dict)
+        requested_inventory, new_filename, po_value_dict, orders_to_cancel_array = process_file(file_path_ca.get(), 'ca', requested_inventory, po_value_dict, orders_to_cancel_array)
         filename_array.append(new_filename)
         submitted_files['ca'] = True
     vendor_origins = find_vendor_origins(submitted_files)
-    
     toggle_order_value_edit('na', False)
     display_inventory_form(requested_inventory, vendor_origins, filename_array, po_value_dict)
 
 
-def process_file(file_path, currency, requested_inventory, po_value_dict):
+def process_file(file_path, currency, requested_inventory, po_value_dict, orders_to_cancel_array):
     try:
         original_path = file_path
         if original_path.endswith('.xls'):
@@ -75,12 +78,12 @@ def process_file(file_path, currency, requested_inventory, po_value_dict):
             workbook, new_filename, new_file_path = create_new_file(original_path, currency)
         if check_file_valid(workbook, currency):
             if currency == 'us':
-                min_order_value = min_order_value_us
+                min_order_value = min_order_value_us.get()
             else:
-                min_order_value = min_order_value_ca
-            workbook = cancel_orders_below_min(workbook, min_order_value, new_file_path, po_value_dict)
-            requested_inventory = calculate_inventory(workbook, requested_inventory)
-            return requested_inventory, new_filename, po_value_dict
+                min_order_value = min_order_value_ca.get()
+            workbook, orders_to_cancel_array = cancel_orders_below_min(workbook, min_order_value, new_file_path, po_value_dict, orders_to_cancel_array)
+            requested_inventory = calculate_inventory(workbook, requested_inventory, orders_to_cancel_array)
+            return requested_inventory, new_filename, po_value_dict, orders_to_cancel_array
     except Exception as e:
         messagebox.showerror("Error", f"Failed to process the file: {str(e)}")
         raise 
@@ -170,9 +173,30 @@ def display_inventory_form(requested_inventory, vendor_origins, filename_array, 
 
 
 def submit_inventory(entries, requested_inventory):
-    for item in requested_inventory:
-        print("Model Number: ", item, " | ", "Requested Qty: ", requested_inventory[item], " | ", "Available Qty: ", entries[item])
-    print("\nREQUESTED INV", requested_inventory)
+    
+    formatted_entries = {}
+
+    for model, entry in entries.items():
+        available_qty = int(entry.get())
+        requested_qty = requested_inventory[model]
+        if available_qty > requested_qty:
+            messagebox.showerror("Error", f"Available quantity for {model} cannot be greater than the requested quantity ({requested_qty}).")
+            return
+        formatted_entries[model] = available_qty
+
+    for model, entry in entries.items():
+        formatted_entries[model] = entry.get()
+    
+
+    pprint.pprint('/n')
+    pprint.pprint("REQUESTED INVENTORY:")
+    pprint.pprint(requested_inventory)
+
+    pprint.pprint('/n')
+    pprint.pprint("ENTRIES: ")
+    pprint.pprint(formatted_entries)
+    
+    
     return
     available_inventory = {model: int(entry.get()) for model, entry in entries.items()}
     confirmation_message = review_inventory(requested_inventory, available_inventory)
