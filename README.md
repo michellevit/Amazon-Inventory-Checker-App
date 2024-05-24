@@ -66,34 +66,45 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
             - remove 1 unit from order_value[order_number] dict
             - if value of items_to_cancel[model_number] is 0 then remove entry from dict
 - Second pass:
-  - If still items in the items_to_cancel dict
-  - remove entries in order_value_dict with value of zero 
-  - organize order_value_dict form lowest value to highest value
-  - for order in order_value_dict:
-    - for each line in sheet, if it matches the order number:
-      - check if the model_number is in the units_to_cancel dict:
-        - yes: 
-          - create var: model_number
-          - create var: order_number
-          - create var: quantity_confirmed (col L)
-          - create var one_unit_cost (col I)
-          - create var: min_order_value for that currency
-          - create var order_value[model_number]
-          - while quantity_confirmed > 0 and items_to_cancel[model_number] > 0: 
-            - remove 1 unit from 'Quantity Confirmed' col
-            - remove 1 unit from quantity_confirmed var
-            - remove 1 unit from items_to_cancel[model_number] dict
-            - remove 1 unit from order_value[order_number] dict
-            - if value of items_to_cancel[model_number] is 0 then remove entry from dict
+  - loop both sheets (new sheets): us sheet + ca sheet:
+    - If still items in the items_to_cancel dict
+    - remove entries in order_value_dict with value of zero 
+    - organize order_value_dict form lowest value to highest value
+    - for order in order_value_dict:
+      - for each line in sheet, if it matches the order number:
+        - check if the model_number is in the units_to_cancel dict:
+          - yes: 
+            - create var: model_number
+            - create var: order_number
+            - create var: quantity_confirmed (col L)
+            - create var one_unit_cost (col I)
+            - create var: min_order_value for that currency
+            - create var order_value[model_number]
+            - while quantity_confirmed > 0 and items_to_cancel[model_number] > 0: 
+              - remove 1 unit from 'Quantity Confirmed' col
+              - remove 1 unit from quantity_confirmed var
+              - remove 1 unit from items_to_cancel[model_number] dict
+              - remove 1 unit from order_value[order_number] dict
+              - if value of items_to_cancel[model_number] is 0 then remove entry from dict
 - Third pass: 
-  - Tabulate new order_value_dict based on new order values (after second pass)
-  - Tabulate a new order_to_cancel array (based on currency (col AF) and min_order_value)
-  - For each line item: 
-    - if order_number in orders_to_cancel array:
-      - yes:
-        - set 'Quantity Confirmed' col quantity to 0
-        - change 'Availability Status' col value to 'CA - Cancelled: Not yet available'
-
+  - loop both sheets (new sheets): us sheet + ca sheet:
+    - Tabulate new order_value_dict based on new order values
+    - Tabulate a new order_to_cancel array (based on currency (col AF) min_order_value)
+    - For each line item: 
+      - if order_number in orders_to_cancel array:
+        - yes:
+          - set 'Quantity Confirmed' col quantity to 0
+          - change 'Availability Status' col value to 'CA - Cancelled: Not yet available'
+  - Fourth pass: 
+  - convert temp sheet(s) to .xls format
+  - rename file "Completed Inventory Sheet For Amazon Submission - [currency]"
+  - create new message for user "Inventory reports are complete - please submit the report(s) *list report(s)* 
+  to Amazon Vendor Central 
+  - Replace 'Inventory Frame':
+    - Columns: Model Number and Quantity Confirmed
+    - remove form entry fields
+    - remove submit button
+    - modify copy message to: 'Amazon US/CA Confirmed Items' 
 
 ## Credits<a name="credits"></a>
 Michelle Flandin
