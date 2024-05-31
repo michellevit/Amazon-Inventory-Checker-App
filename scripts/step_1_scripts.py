@@ -9,7 +9,7 @@ import xlrd
 
 
 
-def convert_xls_to_xlsx(original_path, currency):
+def convert_xls_to_xlsx(original_path, currency, processing_dir):
     # Read the original workbook using xlrd
     book_xls = xlrd.open_workbook(original_path)
     sheet_xls = book_xls.sheet_by_name('Line Items')
@@ -21,19 +21,17 @@ def convert_xls_to_xlsx(original_path, currency):
     for row in range(sheet_xls.nrows):
         for col in range(sheet_xls.ncols):
             sheet_xlsx.cell(row=row + 1, column=col + 1, value=sheet_xls.cell_value(row, col))
-    # Generate new filename with '- Complete 1' suffix
-    directory, filename = os.path.split(original_path)
-    filename_without_extension, _ = os.path.splitext(filename)
+    # filename_without_extension, _ = os.path.splitext(filename)
     capitalized_currency = currency.upper()
-    new_filename = f"{filename_without_extension} - {capitalized_currency} Complete 1.xlsx"
-    new_file_path = os.path.join(directory, new_filename)
+    new_filename = f"Amazon-Orders-{capitalized_currency}-Processing.xlsx"
+    new_file_path = os.path.join(processing_dir, new_filename)
     # Save the new workbook in the same directory as the original
-    book_xlsx
+    book_xlsx.save(new_file_path)
     # Return the new workbook object
     return book_xlsx, new_filename, new_file_path
 
 
-def create_new_file(original_path, currency):
+def create_new_file(original_path, currency, processing_dir):
     workbook = load_workbook(original_path)
     if 'Line Items' not in workbook.sheetnames:
         raise ValueError("No 'Line Items' sheet found in the workbook.")
@@ -44,11 +42,9 @@ def create_new_file(original_path, currency):
     for row in original_sheet.iter_rows():
         for cell in row:
             new_cell = new_sheet.cell(row=cell.row, column=cell.column, value=cell.value)
-    directory, filename = os.path.split(original_path)
-    filename_without_extension, _ = os.path.splitext(filename)
     capitalized_currency = currency.upper()
-    new_filename = f"{filename_without_extension} - {capitalized_currency} Complete 1.xlsx"
-    new_file_path = os.path.join(directory, new_filename)
+    new_filename = f"Amazon-Orders-{capitalized_currency}-Processing.xlsx"
+    new_file_path = os.path.join(processing_dir, new_filename)
     new_workbook.save(new_file_path)
     return new_workbook, new_filename, new_file_path
 
@@ -58,9 +54,13 @@ def check_file_valid(workbook, currency):
     if 'Line Items' not in workbook.sheetnames:
         raise ValueError("The file entered is not valid (it does not have a 'Line Items' tab).")
     sheet = workbook['Line Items']
-    if capitalized_currency not in sheet['AF4'].value:
-        raise ValueError(f"Please enter the {capitalized_currency} into the correct input.")
-    return True
+    if sheet['A4'].value:
+        if capitalized_currency not in sheet['AF4'].value:
+            raise ValueError(f"Please enter the {capitalized_currency} file into the correct input.")
+        return True
+    else:
+        return False
+
 
 
 def cancel_orders_below_min(workbook, min_order_value, new_file_path, po_value_dict, orders_to_cancel_array):
@@ -101,10 +101,10 @@ def calculate_inventory(workbook, requested_inventory, orders_to_cancel_array):
     sheet = workbook['Line Items']
     for row in range(4, sheet.max_row + 1):
         order_number = sheet[f'A{row}'].value
+        if not order_number:
+            break
         model_number = sheet[f'C{row}'].value
         quantity_confirmed = int(float(sheet[f'L{row}'].value))
-        if not model_number:
-            break
         if order_number not in orders_to_cancel_array: 
             if model_number in requested_inventory:
                 requested_inventory[model_number] += quantity_confirmed

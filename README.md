@@ -47,7 +47,17 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
 
 
 ## To Do<a name="to-do"></a>
-- Create dict: items_to_cancel
+- CASES:
+  - 1 file entered with requested items, must be submitted
+  - 1 file entered with no requested items, nothing to submit
+  - 1 file entered, but all below threshold -> submit empty form
+
+  - 2 files entered both with requested items, both must be submitted 
+  - 2 files entered both with no requested items, nothing to submit
+  - 2 files entered, all below threshold -> submit empty forms
+  - 2 files entered, 1 is empty so nothing to submit, 1 must be submitted
+  - 2 files entered, 1 is empty so nothing to submit, 1 is all below threshold so must submit
+
 - First pass: 
   - loop both sheets (new sheets): us sheet + ca sheet:
     - for each line item, if model_number in items_to_cancel dict
@@ -105,6 +115,7 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
     - remove form entry fields
     - remove submit button
     - modify copy message to: 'Amazon US/CA Confirmed Items' 
+- Edge Case: no orders over min_order_value -> display_inventory_form()
 
 ## Credits<a name="credits"></a>
 Michelle Flandin
@@ -116,6 +127,7 @@ Amazon-Inventory-Checker-App
 | - build/
 | - dist/
 | | - file_processor
+| - processing
 | - resources
 | | - app_icon.ico
 | - uploaded_files/

@@ -1,56 +1,54 @@
 # step_2_scripts.py
 
+import pprint
 import os
-import shutil
+from openpyxl import load_workbook
+import xlwt
 
 
-def review_inventory(requested_inventory, available_inventory):
+def calculate_units_to_cancel(requested_inventory, available_inventory):
+
+    units_to_cancel = {}
+
+    # print('\n')
+    # pprint.pprint("REQUESTED INVENTORY:")
+    # pprint.pprint(requested_inventory)
+
+    # print('\n')
+    # pprint.pprint("ENTRIES: ")
+    # pprint.pprint(available_inventory)
+
+    for model_number in requested_inventory:
+        if requested_inventory[model_number] > available_inventory[model_number]:
+            discrepancy = requested_inventory[model_number] - available_inventory[model_number]
+            units_to_cancel[model_number] = discrepancy
+
+    # print('\n')
+    # pprint.pprint("Units to Cancel")
+    # pprint.pprint(units_to_cancel)
+
+    return units_to_cancel
+
+
+
+def convert_xlsx_to_xls(filename, processing_dir, upload_directory):
+    processed_file_path = os.path.join(processing_dir, filename)
+    processing_workbook = load_workbook(processed_file_path)
+    reference_sheet = processing_workbook.active
+    
+    completed_workbook = xlwt.Workbook()
+    new_sheet = completed_workbook.add_sheet('Line Items')
+
+    for row_idx, row in enumerate(reference_sheet.iter_rows()):
+        for col_idx, cell in enumerate(row):
+            new_sheet.write(row_idx, col_idx, cell.value)
+    
+    completed_filename = filename.replace('Processing.xlsx', 'Complete.xls')
+    completed_file_path = os.path.join(upload_directory, completed_filename)
+    completed_workbook.save(completed_file_path)
+    os.remove(processed_file_path)
+    return completed_workbook
+
+
+def cancel_out_of_stock_units():
     print('hi')
-
-    # if requested_inventory == available_inventory: 
-    #     print('Do nothing!')
-    #     directory, filename = os.path.split(original_path)
-    #     name, extension = os.path.splitext(filename)
-    #     new_name = name + ' - complete' + extension
-    #     new_path = os.path.join(directory, new_name)
-    #     shutil.copyfile(original_path, new_path)
-    # else:
-    #     print("UHOH")
-    # confirmation_message = (f"File has been processed\n\nThe completed file will be in the same folder as the original Amazon vendor download file, and it will be named: \n\n '{new_name}'\n\nSubmit this NEW file to Amazon to confirm the {country} orders.")
-    # return confirmation_message
-
-
-    # use xldr to read the file at original_path
-    # create a dictionary called po_value + organize it from lowest val to highest val
-    # if requested_inventory != available_inventory:
-    # # create a new dict called items_to_cancel (this will be requested item - available item)
-    # # create a new dict called item_value (key: model_number, value cost)
-    # # Go through each line in the spreadsheet:
-    # # # Get the PO number
-    # # # Get the PO value
-    # # # While the item is in the items_to_cancel dict and the po_value > min_value_threshold
-    # # # # remove 1 from the quantity_confirmed column
-    # # # # remove 1 from the items_to_cancel
-    # # # # if the item in items_to_cancel is 0 then remove it from the dict
-    # # # # remove the item_cost from the po_value dict
-    # # Once all the rows have been iterated, if there are still items in the items_to_cancel then:
-    # # Iterate through the po_value dictionary (sorted low to high):
-    # # # Iterate through the rows
-    # # # # if Order/PO number matches and model_number is in the items_to_cancel dict:
-    # # # # # while item is in the items_to_cancel dict and quantity_confirmed > 0:
-    # # # # # # remove 1 from the quantity_confirmed and remove 1 from the items_to_cancel
-    # # # # # # if the items_to_cancel item value = 0 then remove it from the dict
-    # # Iterate through each row in the sheet
-    # # # If the 'Quantity Confirmed' value is 0 then change that row's availability status to 'OS - Cancelled: Out of stock'
-    # print("\n Available Inventory:")
-    # print("-" * 40)
-    # print("{:<15} | {:>10}".format("Model Number", "Quantity"))
-    # print("-" * 40)
-    # for model, quantity in available_inventory.items():
-    #     print("{:<15} | {:>10}".format(model, quantity))
-    # print("-" * 40)
-
-
-def convert_xlsx_to_xls(src_file_path, dst_file_path):
-    print('hi')
-
