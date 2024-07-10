@@ -1,10 +1,8 @@
 # Amazon Inventory Checker App
 
 
-![Django Version](https://img.shields.io/badge/Django-4.0.3-0c4a30.svg)
 ![Python Version](https://img.shields.io/badge/Python-3.10.4-ffdb4f.svg)
 ![Tkinter](https://img.shields.io/badge/Tkinter-3A77A8.svg)
-![React Version](https://img.shields.io/badge/React-18.2.0-61dafb.svg)
 
 
 An application that intakes an Amazon order request spreadsheet, calculates the total requested inventory, allows users to input their actual inventory, and calculates the optimal orders to confirm based on inventory and the minimum order value threshold (to keep shipping costs reasonable).
