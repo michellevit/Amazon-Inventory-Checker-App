@@ -2,6 +2,7 @@
 
 
 ![Python Version](https://img.shields.io/badge/Python-3.10.4-ffdb4f.svg)
+![openpyxl](https://img.shields.io/badge/OpenPyXL-3.0.9-206e47.svg)
 ![Tkinter](https://img.shields.io/badge/Tkinter-3A77A8.svg)
 
 
