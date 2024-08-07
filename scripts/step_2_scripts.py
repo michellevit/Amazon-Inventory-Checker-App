@@ -3,6 +3,7 @@
 import pprint
 import os
 from openpyxl import load_workbook
+from openpyxl.utils.datetime import from_excel
 import xlwt
 
 
@@ -41,7 +42,12 @@ def convert_xlsx_to_xls(filename, processing_dir, upload_directory):
 
     for row_idx, row in enumerate(reference_sheet.iter_rows()):
         for col_idx, cell in enumerate(row):
-            new_sheet.write(row_idx, col_idx, cell.value)
+            if cell.is_date:
+                date_value = cell.value
+                date_string = date_value.strftime("%d-%b-%Y")
+                new_sheet.write(row_idx, col_idx, date_string)
+            else:
+                new_sheet.write(row_idx, col_idx, cell.value)
     
     completed_filename = filename.replace('Processing.xlsx', 'Complete.xls')
     completed_file_path = os.path.join(upload_directory, completed_filename)

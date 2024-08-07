@@ -4,8 +4,8 @@ import json
 import os
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
-from scripts.step_1_scripts import convert_xls_to_xlsx, create_new_file, check_file_valid, cancel_orders_below_min, calculate_inventory, find_vendor_origins, copy_to_clipboard
-from scripts.step_2_scripts import calculate_units_to_cancel, convert_xlsx_to_xls, cancel_out_of_stock_units
+from scripts.step_1_scripts import *
+from scripts.step_2_scripts import *
 import shutil
 
 
@@ -105,6 +105,7 @@ def process_file(file_path, currency, requested_inventory, po_value_dict, orders
             else:
                 min_order_value = min_order_value_ca.get()
             workbook, orders_to_cancel_array = cancel_orders_below_min(workbook, min_order_value, new_file_path, po_value_dict, orders_to_cancel_array)
+            workbook = update_hand_off_date(workbook, new_file_path)
             requested_inventory = calculate_inventory(workbook, requested_inventory, orders_to_cancel_array)
             return requested_inventory, filename_processing, po_value_dict, orders_to_cancel_array
         else:

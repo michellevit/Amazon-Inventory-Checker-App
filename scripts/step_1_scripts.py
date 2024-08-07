@@ -2,6 +2,7 @@
 
 from openpyxl.workbook import Workbook
 from openpyxl import load_workbook
+from openpyxl.utils.datetime import from_excel
 import os
 import pyperclip
 from tkinter import messagebox
@@ -10,9 +11,8 @@ import xlrd
 
 
 def convert_xls_to_xlsx(original_path, currency, processing_dir):
-    print("convert_xls_to_xlsx")
     # Read the original workbook using xlrd
-    book_xls = xlrd.open_workbook(original_path)
+    book_xls = xlrd.open_workbook(original_path, formatting_info=True)
     sheet_xls = book_xls.sheet_by_name('Line Items')
     # Create a new workbook using openpyxl
     book_xlsx = Workbook()
@@ -21,7 +21,13 @@ def convert_xls_to_xlsx(original_path, currency, processing_dir):
     # Copy data from the old xls file to the new xlsx file
     for row in range(sheet_xls.nrows):
         for col in range(sheet_xls.ncols):
-            sheet_xlsx.cell(row=row + 1, column=col + 1, value=sheet_xls.cell_value(row, col))
+            cell_value = sheet_xls.cell_value(row, col)
+            cell_type = sheet_xls.cell_type(row, col)
+            if cell_type == xlrd.XL_CELL_DATE:
+                date_value = xlrd.xldate.xldate_as_datetime(cell_value, book_xls.datemode)
+                sheet_xlsx.cell(row=row + 1, column=col + 1).value = date_value
+            else:
+                sheet_xlsx.cell(row=row + 1, column=col + 1).value = cell_value
     # filename_without_extension, _ = os.path.splitext(filename)
     capitalized_currency = currency.upper()
     new_filename = f"Amazon-Orders-{capitalized_currency}-Processing.xlsx"
@@ -33,7 +39,6 @@ def convert_xls_to_xlsx(original_path, currency, processing_dir):
 
 
 def create_new_file(original_path, currency, processing_dir):
-    print("create_new_file")
     workbook = load_workbook(original_path)
     if 'Line Items' not in workbook.sheetnames:
         raise ValueError("No 'Line Items' sheet found in the workbook.")
@@ -52,7 +57,6 @@ def create_new_file(original_path, currency, processing_dir):
 
 
 def check_file_valid(workbook, currency):
-    print("check_file_valid")
     capitalized_currency = currency.upper()
     if 'Line Items' not in workbook.sheetnames:
         raise ValueError("The file entered is not valid (it does not have a 'Line Items' tab).")
@@ -65,9 +69,7 @@ def check_file_valid(workbook, currency):
         return False
 
 
-
 def cancel_orders_below_min(workbook, min_order_value, new_file_path, po_value_dict, orders_to_cancel_array):
-    print("cancel_orders_below_min")
     sheet = workbook['Line Items']
     current_currency_orders = []
     for row in range(4, sheet.max_row + 1):
@@ -93,7 +95,7 @@ def cancel_orders_below_min(workbook, min_order_value, new_file_path, po_value_d
             break
         if order_number in orders_to_cancel_array:
             sheet[f'L{row}'].value = 0.0
-            sheet[f'S{row}'].value = "CA - Cancelled: Not yet available"
+            sheet[f'S{row}'].value = "CA - Cancelled: Not yet available"        
     for key in po_value_dict:
         if key in orders_to_cancel_array:
             po_value_dict[key] = 0.0
@@ -101,8 +103,21 @@ def cancel_orders_below_min(workbook, min_order_value, new_file_path, po_value_d
     return workbook, orders_to_cancel_array
 
 
+def update_hand_off_date(workbook, new_file_path):
+    sheet = workbook['Line Items']
+    for row in range(4, sheet.max_row + 1):
+        if not sheet[f'A{row}'].value:
+            break
+        else:
+            print("EXPECTED BEFORE: ", sheet[f'R{row}'].value)
+            print("END HANDOFF: ", sheet[f'P{row}'].value)
+            sheet[f'R{row}'].value = sheet[f'P{row}'].value
+            print("EXPECTED AFTER: ", sheet[f'R{row}'].value)
+    workbook.save(new_file_path)
+    return workbook
+
+
 def calculate_inventory(workbook, requested_inventory, orders_to_cancel_array):
-    print("calculate_inventory")
     sheet = workbook['Line Items']
     for row in range(4, sheet.max_row + 1):
         order_number = sheet[f'A{row}'].value
@@ -120,7 +135,6 @@ def calculate_inventory(workbook, requested_inventory, orders_to_cancel_array):
 
 
 def find_vendor_origins(submitted_files):
-    print("find_vendor_origins")
     if len(submitted_files) == 2:
         return "Amazon US + CA"
     elif "us" in submitted_files:
