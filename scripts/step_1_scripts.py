@@ -10,6 +10,7 @@ import xlrd
 
 
 def convert_xls_to_xlsx(original_path, currency, processing_dir):
+    print("convert_xls_to_xlsx")
     # Read the original workbook using xlrd
     book_xls = xlrd.open_workbook(original_path)
     sheet_xls = book_xls.sheet_by_name('Line Items')
@@ -32,6 +33,7 @@ def convert_xls_to_xlsx(original_path, currency, processing_dir):
 
 
 def create_new_file(original_path, currency, processing_dir):
+    print("create_new_file")
     workbook = load_workbook(original_path)
     if 'Line Items' not in workbook.sheetnames:
         raise ValueError("No 'Line Items' sheet found in the workbook.")
@@ -50,6 +52,7 @@ def create_new_file(original_path, currency, processing_dir):
 
 
 def check_file_valid(workbook, currency):
+    print("check_file_valid")
     capitalized_currency = currency.upper()
     if 'Line Items' not in workbook.sheetnames:
         raise ValueError("The file entered is not valid (it does not have a 'Line Items' tab).")
@@ -64,6 +67,7 @@ def check_file_valid(workbook, currency):
 
 
 def cancel_orders_below_min(workbook, min_order_value, new_file_path, po_value_dict, orders_to_cancel_array):
+    print("cancel_orders_below_min")
     sheet = workbook['Line Items']
     current_currency_orders = []
     for row in range(4, sheet.max_row + 1):
@@ -98,6 +102,7 @@ def cancel_orders_below_min(workbook, min_order_value, new_file_path, po_value_d
 
 
 def calculate_inventory(workbook, requested_inventory, orders_to_cancel_array):
+    print("calculate_inventory")
     sheet = workbook['Line Items']
     for row in range(4, sheet.max_row + 1):
         order_number = sheet[f'A{row}'].value
@@ -115,6 +120,7 @@ def calculate_inventory(workbook, requested_inventory, orders_to_cancel_array):
 
 
 def find_vendor_origins(submitted_files):
+    print("find_vendor_origins")
     if len(submitted_files) == 2:
         return "Amazon US + CA"
     elif "us" in submitted_files:
@@ -124,8 +130,11 @@ def find_vendor_origins(submitted_files):
 
 
 def copy_to_clipboard(inventory_dict, vendor_origins):
-    clipboard_text = f"{vendor_origins} - Requested Items:\n" 
-    lines = [f"{model}: {quantity}" for model, quantity in inventory_dict.items()]
-    clipboard_text += "\n".join(lines) 
-    pyperclip.copy(clipboard_text)
-    messagebox.showinfo("Clipboard", "Inventory data copied to clipboard!")
+    if not inventory_dict:
+        messagebox.showinfo("Clipboard", "No requests - all orders below threshold or none requested.")
+    else:
+        clipboard_text = f"{vendor_origins} - Requested Items:\n"
+        lines = [f"{model}: {quantity}" for model, quantity in inventory_dict.items()]
+        clipboard_text += "\n".join(lines)
+        pyperclip.copy(clipboard_text)
+        messagebox.showinfo("Clipboard", "Inventory data copied to clipboard!")

@@ -49,6 +49,7 @@ def browse_files(currency):
 
 
 def process_files():
+    print("process_files")
     processing_filenames = {}
     if not file_path_ca.get() and not file_path_us.get():
         messagebox.showerror("Error", "Please select at least one file first.")
@@ -77,7 +78,21 @@ def process_files():
     check_if_orders_over_min(requested_inventory, vendor_origins, processing_filenames, processing_dir, upload_directory)
 
 
+def clear_processing_directory(processing_dir):
+    print("clear_processing_directory")
+    for filename in os.listdir(processing_dir):
+        file_path = os.path.join(processing_dir, filename)
+        try:
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.unlink(file_path)
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)
+        except Exception as e:
+            print(f'Failed to delete {file_path}. Reason: {e}')
+
+
 def process_file(file_path, currency, requested_inventory, po_value_dict, orders_to_cancel_array, processing_dir):
+    print("process_file")
     try:
         original_path = file_path
         if original_path.endswith('.xls'):
@@ -104,19 +119,9 @@ def process_file(file_path, currency, requested_inventory, po_value_dict, orders
         raise 
 
 
-def clear_processing_directory(processing_dir):
-    for filename in os.listdir(processing_dir):
-        file_path = os.path.join(processing_dir, filename)
-        try:
-            if os.path.isfile(file_path) or os.path.islink(file_path):
-                os.unlink(file_path)
-            elif os.path.isdir(file_path):
-                shutil.rmtree(file_path)
-        except Exception as e:
-            print(f'Failed to delete {file_path}. Reason: {e}')
-
 
 def remove_old_completed_files(upload_directory):
+    print("remove_old_completed_files")
     # Remove any previous 'Complete' reports from directory
     old_filenames = ["Amazon-Orders-US-Complete.xls", "Amazon-Orders-CA-Complete.xls"]
     for old_filename in old_filenames:
@@ -156,16 +161,17 @@ def change_order_value(currency):
 
 
 def check_if_orders_over_min(requested_inventory, vendor_origins, processing_filenames, processing_dir, upload_directory):
+    print("check_if_orders_over_min")
     # If no orders are over min_value threshold
     if all(value == 0.0 for value in requested_inventory.values()):
-        display_final_message("all below threshold", processing_filenames, upload_directory)
+        display_final_message("all below threshold", processing_filenames, upload_directory, requested_inventory, vendor_origins)
         prep_files_for_submission(processing_filenames, processing_dir, upload_directory)
     else:
         display_inventory_form(requested_inventory, vendor_origins, processing_filenames, processing_dir, upload_directory)
 
 
 def display_inventory_form(requested_inventory, vendor_origins, processing_filenames, processing_dir, upload_directory):
-    
+    print("display_inventory_form")
     # Container frame for labels
     inventory_form_container = ttk.Frame(inventory_frame)
     inventory_form_container.grid(row=0, column=0, columnspan=3, pady=5)
@@ -192,14 +198,15 @@ def display_inventory_form(requested_inventory, vendor_origins, processing_filen
     clear_button.pack(side=tk.LEFT, padx=5)  
     copy_button = ttk.Button(button_frame, text="Copy", command=lambda: copy_to_clipboard(requested_inventory, vendor_origins))
     copy_button.pack(side=tk.LEFT, padx=5)
-    submit_button = ttk.Button(button_frame, text="Submit", command=lambda: submit_inventory(entries, requested_inventory, processing_filenames, processing_dir, upload_directory))
+    submit_button = ttk.Button(button_frame, text="Submit", command=lambda: submit_inventory(entries, requested_inventory, processing_filenames, processing_dir, upload_directory, vendor_origins))
     submit_button.pack(side=tk.LEFT, padx=5)
     
     # Pack the inventory frame back into the main frame
     inventory_frame.pack(fill=tk.BOTH, expand=True)
 
 
-def submit_inventory(entries, requested_inventory, processing_filenames, processing_dir, upload_directory):
+def submit_inventory(entries, requested_inventory, processing_filenames, processing_dir, upload_directory, vendor_origins):
+    print("submit_inventory")
     available_inventory = {}
     for model, entry in entries.items():
         available_qty = int(entry.get())
@@ -208,13 +215,18 @@ def submit_inventory(entries, requested_inventory, processing_filenames, process
             messagebox.showerror("Error", f"Available quantity for {model} cannot be greater than the requested quantity ({requested_qty}).")
             return
         available_inventory[model] = available_qty 
-    units_to_cancel = calculate_units_to_cancel(requested_inventory, available_inventory)
-    if units_to_cancel:
-        cancel_out_of_stock_units()    
-    prep_files_for_submission(processing_filenames, processing_dir, upload_directory)
+    try:
+        units_to_cancel = calculate_units_to_cancel(requested_inventory, available_inventory)
+        if units_to_cancel:
+            cancel_out_of_stock_units()    
+        prep_files_for_submission(processing_filenames, processing_dir, upload_directory, requested_inventory, vendor_origins)
+    except PermissionError:
+        messagebox.showerror("File Error", "The file is open. Please close the file before clicking submit.")
+        return
 
 
-def prep_files_for_submission(processing_filenames, processing_dir, upload_directory):
+def prep_files_for_submission(processing_filenames, processing_dir, upload_directory, requested_inventory, vendor_origins):
+    print("prep_files_for_submission")
     if 'us' in processing_filenames:
         us_filename = processing_filenames['us']
         convert_xlsx_to_xls(us_filename, processing_dir, upload_directory)
@@ -222,16 +234,19 @@ def prep_files_for_submission(processing_filenames, processing_dir, upload_direc
         ca_filename = processing_filenames['ca']
         convert_xlsx_to_xls(ca_filename, processing_dir, upload_directory)
     result = 'files ready'
-    display_final_message(result, processing_filenames, upload_directory)
+    display_final_message(result, processing_filenames, upload_directory, requested_inventory, vendor_origins)
 
 
-def display_final_message(result, processing_filenames, upload_directory):
+def display_final_message(result, processing_filenames, upload_directory, requested_inventory, vendor_origins):
+    print("display_final_message")
     clear_frame(inventory_frame)
     final_message_container = ttk.Frame(message_frame)
     final_message_container.grid(row=0, column=0, columnspan=3, pady=5)
     # Buttons Frame
     button_frame = ttk.Frame(message_frame)
     button_frame.grid(row=1, column=0, columnspan=3, pady=10)
+    copy_button = ttk.Button(button_frame, text="Copy", command=lambda: copy_to_clipboard(requested_inventory, vendor_origins))
+    copy_button.pack(side=tk.LEFT, padx=5)
     clear_button = ttk.Button(button_frame, text="Clear", command=reset)
     clear_button.pack(side=tk.LEFT, padx=5)
 
@@ -265,6 +280,7 @@ def display_final_message(result, processing_filenames, upload_directory):
 
 
 def hide_order_value_edit_section(hide=True):
+    print("hide_order_value_edit_section")
     if hide:
         order_value_entry_us.pack_forget()
         change_button_us.pack_forget()
