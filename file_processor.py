@@ -2,6 +2,7 @@
 
 import json
 import os
+import sys
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from scripts.step_1_scripts import *
@@ -11,7 +12,8 @@ import shutil
 
 def load_min_order_value(currency):
     try:
-        with open('min_order_value.json', 'r') as file:
+        file_path = os.path.join('min_order_value.json')
+        with open(file_path, 'r') as file:
             data = json.load(file)
             if currency == 'us':
                 return data.get('min_order_value_us', 380)
@@ -326,7 +328,7 @@ def display_final_message(result, processing_filenames, processing_dir, upload_d
     button_frame = ttk.Frame(message_frame)
     button_frame.grid(row=table_row + 1, column=0, columnspan=3, pady=10)
     if accepted_inventory:
-        copy_button = ttk.Button(button_frame, text="Copy Confirmed Items", command=lambda: copy_to_clipboard(accepted_inventory, vendor_origins))
+        copy_button = ttk.Button(button_frame, text="Copy confirmed items", command=lambda: copy_to_clipboard(accepted_inventory, vendor_origins))
         copy_button.pack(side=tk.LEFT, padx=5)
     clear_button = ttk.Button(button_frame, text="Clear", command=reset)
     clear_button.pack(side=tk.LEFT, padx=5)
