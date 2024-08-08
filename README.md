@@ -2,9 +2,9 @@
 
 
 ![Python Version](https://img.shields.io/badge/Python-3.10.4-ffdb4f.svg)
-![openpyxl](https://img.shields.io/badge/OpenPyXL-3.0.9-206e47.svg)
-![Tkinter](https://img.shields.io/badge/Tkinter-3A77A8.svg)
-![PyInstaller](https://img.shields.io/badge/PyInstaller-4.7-8CA1AF.svg)
+![Tkinter](https://img.shields.io/badge/Tkinter-8.6-3A77A8.svg)
+![openpyxl](https://img.shields.io/badge/OpenPyXL-3.1.2-206e47.svg)
+![PyInstaller](https://img.shields.io/badge/PyInstaller-6.6.0-8CA1AF.svg)
 
 
 An application that intakes an Amazon order request spreadsheet, calculates the total requested inventory, allows users to input their actual inventory, and calculates the optimal orders to confirm based on inventory and the minimum order value threshold (to keep shipping costs reasonable).
@@ -23,9 +23,9 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
 
 ## Technologies Used<a name="technologies-used"></a>
 - Python (3.10.0)
-- Tkinter
-- OpenPyXL Library
-- PyInstaller
+- Tkinter (8.6)
+- OpenPyXL Library (3.1.2)
+- PyInstaller (6.6.0)
 
 
 ## How To Install the Program<a name="how-to-install"></a>
