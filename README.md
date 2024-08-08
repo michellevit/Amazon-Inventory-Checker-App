@@ -28,6 +28,7 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
 
 ## How To Install the Program<a name="how-to-install"></a>
 - Open the GitHub and save the project into a folder
+- Open the app-build.bat and make sure the DEBUG value is set to FALSE
 - Create the shortcut: 
   - Open the project root directory
   - Right click the file 'app_shortcut.vbs'
@@ -46,9 +47,9 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
 
 
 ## How To Edit the Program<a name="how-to-edit"></a>
-- Open the rebuild-app.bat and change DEBUG value to TRUE (to see)
+- Open the app-build.bat and change DEBUG value to TRUE (to see print statements)
 - After making code changes to file_processor.py - run: 
-  - `.\rebuild-app.bat`
+  - `.\app-build.bat`
   - Note: The virtual environment must be created and activated:
     - To create the program follow [How To Create The Virtual Environment](#how-to-venv)
     - Open a terminal and navigate to the project's root dir 
@@ -69,7 +70,7 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
 
 
 ## Troubleshooting<a name="troubleshooting"></a>
-- Make sure app is closed before running `.\rebuild-app`
+- Make sure app is closed before running `.\app-build`
 
 
 ## To Do<a name="troubleshooting"></a>

@@ -10,6 +10,13 @@ from scripts.step_2_scripts import *
 import shutil
 
 
+# Set the working directory to the location of the executable
+if getattr(sys, 'frozen', False):
+    os.chdir(os.path.dirname(sys.executable))
+else:
+    os.chdir(os.path.dirname(__file__))
+
+
 def load_min_order_value(currency):
     try:
         file_path = os.path.join('min_order_value.json')
