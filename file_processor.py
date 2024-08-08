@@ -93,6 +93,7 @@ def clear_processing_directory(processing_dir):
 
 def process_file(file_path, currency, requested_inventory, po_value_dict, orders_to_cancel_array, processing_dir):
     print("process_file")
+    clear_frame(message_frame)
     try:
         original_path = file_path
         if original_path.endswith('.xls'):
@@ -166,13 +167,14 @@ def check_if_orders_over_min(requested_inventory, vendor_origins, processing_fil
     # If no orders are over min_value threshold
     if all(value == 0.0 for value in requested_inventory.values()):
         display_final_message("all below threshold", processing_filenames, upload_directory, requested_inventory, vendor_origins)
-        prep_files_for_submission(processing_filenames, processing_dir, upload_directory)
+        prep_files_for_submission(processing_filenames, processing_dir, upload_directory, requested_inventory, vendor_origins)
     else:
         display_inventory_form(requested_inventory, vendor_origins, processing_filenames, processing_dir, upload_directory)
 
 
 def display_inventory_form(requested_inventory, vendor_origins, processing_filenames, processing_dir, upload_directory):
     print("display_inventory_form")
+    entries.clear()
     # Container frame for labels
     inventory_form_container = ttk.Frame(inventory_frame)
     inventory_form_container.grid(row=0, column=0, columnspan=3, pady=5)
@@ -184,6 +186,7 @@ def display_inventory_form(requested_inventory, vendor_origins, processing_filen
     ttk.Label(inventory_form_container, text="Available", font=bold_font, anchor="center", width=20).grid(row=0, column=2, sticky='ew', padx=5, pady=5)
 
     # Populate requested inventory data
+    print("REQUESTED INV: ", requested_inventory)
     for idx, (model, quantity) in enumerate(requested_inventory.items(), start=1):
         ttk.Label(inventory_form_container, text=model, anchor="center", width=20, justify="center").grid(row=idx, column=0, sticky='ew')
         ttk.Label(inventory_form_container, text=str(quantity), width=20, anchor="center", justify="center").grid(row=idx, column=1)
@@ -219,7 +222,7 @@ def submit_inventory(entries, requested_inventory, processing_filenames, process
     try:
         units_to_cancel = calculate_units_to_cancel(requested_inventory, available_inventory)
         if units_to_cancel:
-            cancel_out_of_stock_units()    
+            cancel_out_of_stock_units(units_to_cancel, processing_filenames, processing_dir, min_order_value_us, min_order_value_ca)    
         prep_files_for_submission(processing_filenames, processing_dir, upload_directory, requested_inventory, vendor_origins)
     except PermissionError:
         messagebox.showerror("File Error", "The file is open. Please close the file before clicking submit.")

@@ -50,7 +50,6 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
 
 ## To Do<a name="to-do"></a>
 
-- make sure first pass is working (cancel under min order value)
 - copy inventory after submitted should be updated to the confirmed qtys
 
 - CASES:

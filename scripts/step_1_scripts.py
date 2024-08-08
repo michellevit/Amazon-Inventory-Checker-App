@@ -109,10 +109,7 @@ def update_hand_off_date(workbook, new_file_path):
         if not sheet[f'A{row}'].value:
             break
         else:
-            print("EXPECTED BEFORE: ", sheet[f'R{row}'].value)
-            print("END HANDOFF: ", sheet[f'P{row}'].value)
             sheet[f'R{row}'].value = sheet[f'P{row}'].value
-            print("EXPECTED AFTER: ", sheet[f'R{row}'].value)
     workbook.save(new_file_path)
     return workbook
 
