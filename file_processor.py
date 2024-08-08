@@ -14,12 +14,18 @@ def load_min_order_value(currency):
         with open('min_order_value.json', 'r') as file:
             data = json.load(file)
             if currency == 'us':
-                return data['min_order_value_us']
+                return data.get('min_order_value_us', 380)
             else:
-                return data['min_order_value_ca']
-    except (FileNotFoundError, KeyError, json.JSONDecodeError):
-        print("Error with min_order_value")
-        return 380
+                return data.get('min_order_value_ca', 380)
+    except FileNotFoundError:
+        print("Error: 'min_order_value.json' file not found. Using default value 380.")
+    except KeyError as e:
+        print(f"Error: Key {e} not found in the JSON data. Using default value 380.")
+    except json.JSONDecodeError:
+        print("Error: JSON decode error occurred. Using default value 380.")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}. Using default value 380.")
+    return 380
 
 
 def save_min_order_value(currency, value):
@@ -49,7 +55,6 @@ def browse_files(currency):
 
 
 def process_files():
-    print("process_files")
     processing_filenames = {}
     if not file_path_ca.get() and not file_path_us.get():
         messagebox.showerror("Error", "Please select at least one file first.")
@@ -79,7 +84,8 @@ def process_files():
 
 
 def clear_processing_directory(processing_dir):
-    print("clear_processing_directory")
+    if not os.listdir(processing_dir):
+        return
     for filename in os.listdir(processing_dir):
         file_path = os.path.join(processing_dir, filename)
         try:
@@ -92,7 +98,6 @@ def clear_processing_directory(processing_dir):
 
 
 def process_file(file_path, currency, requested_inventory, po_value_dict, orders_to_cancel_array, processing_dir):
-    print("process_file")
     clear_frame(message_frame)
     try:
         original_path = file_path
@@ -121,9 +126,7 @@ def process_file(file_path, currency, requested_inventory, po_value_dict, orders
         raise 
 
 
-
 def remove_old_completed_files(upload_directory):
-    print("remove_old_completed_files")
     # Remove any previous 'Complete' reports from directory
     old_filenames = ["Amazon-Orders-US-Complete.xls", "Amazon-Orders-CA-Complete.xls"]
     for old_filename in old_filenames:
@@ -133,7 +136,8 @@ def remove_old_completed_files(upload_directory):
             try:
                 os.remove(old_file_path)
             except Exception as e:
-                print(f"Error removing file {old_file_path}: {e}")
+                messagebox.showerror("Error", f"Error removing file {old_file_path}: {e}\n\nERROR: {str(e)}\n")
+                raise
 
 
 def change_order_value(currency):
@@ -163,7 +167,6 @@ def change_order_value(currency):
 
 
 def check_if_orders_over_min(requested_inventory, vendor_origins, processing_filenames, processing_dir, upload_directory):
-    print("check_if_orders_over_min")
     # If no orders are over min_value threshold
     if all(value == 0.0 for value in requested_inventory.values()):
         display_final_message("all below threshold", processing_filenames, upload_directory, requested_inventory, vendor_origins)
@@ -173,7 +176,6 @@ def check_if_orders_over_min(requested_inventory, vendor_origins, processing_fil
 
 
 def display_inventory_form(requested_inventory, vendor_origins, processing_filenames, processing_dir, upload_directory):
-    print("display_inventory_form")
     entries.clear()
     # Container frame for labels
     inventory_form_container = ttk.Frame(inventory_frame)
@@ -186,7 +188,6 @@ def display_inventory_form(requested_inventory, vendor_origins, processing_filen
     ttk.Label(inventory_form_container, text="Available", font=bold_font, anchor="center", width=20).grid(row=0, column=2, sticky='ew', padx=5, pady=5)
 
     # Populate requested inventory data
-    print("REQUESTED INV: ", requested_inventory)
     for idx, (model, quantity) in enumerate(requested_inventory.items(), start=1):
         ttk.Label(inventory_form_container, text=model, anchor="center", width=20, justify="center").grid(row=idx, column=0, sticky='ew')
         ttk.Label(inventory_form_container, text=str(quantity), width=20, anchor="center", justify="center").grid(row=idx, column=1)
@@ -210,27 +211,32 @@ def display_inventory_form(requested_inventory, vendor_origins, processing_filen
 
 
 def submit_inventory(entries, requested_inventory, processing_filenames, processing_dir, upload_directory, vendor_origins):
-    print("submit_inventory")
     available_inventory = {}
     for model, entry in entries.items():
-        available_qty = int(entry.get())
-        requested_qty = requested_inventory[model]
-        if available_qty > requested_qty:
-            messagebox.showerror("Error", f"Available quantity for {model} cannot be greater than the requested quantity ({requested_qty}).")
+        try:
+            available_qty = int(entry.get())
+        except ValueError:
+            messagebox.showerror("Error", f"Available quantity for {model} must be between 0 and the requested quantity ({requested_qty}).")
             return
-        available_inventory[model] = available_qty 
+        requested_qty = requested_inventory[model]
+        if available_qty > requested_qty or available_qty < 0:
+            messagebox.showerror("Error", f"Available quantity for {model} must be between 0 and the requested quantity ({requested_qty}).")
+            return
+        
+        available_inventory[model] = available_qty
     try:
         units_to_cancel = calculate_units_to_cancel(requested_inventory, available_inventory)
         if units_to_cancel:
-            cancel_out_of_stock_units(units_to_cancel, processing_filenames, processing_dir, min_order_value_us, min_order_value_ca)    
-        prep_files_for_submission(processing_filenames, processing_dir, upload_directory, requested_inventory, vendor_origins)
+            accepted_inventory = cancel_out_of_stock_units(units_to_cancel, processing_filenames, processing_dir, min_order_value_us, min_order_value_ca)
+        else:
+            accepted_inventory = requested_inventory
+        prep_files_for_submission(processing_filenames, processing_dir, upload_directory, accepted_inventory, vendor_origins)
     except PermissionError:
         messagebox.showerror("File Error", "The file is open. Please close the file before clicking submit.")
         return
 
 
-def prep_files_for_submission(processing_filenames, processing_dir, upload_directory, requested_inventory, vendor_origins):
-    print("prep_files_for_submission")
+def prep_files_for_submission(processing_filenames, processing_dir, upload_directory, accepted_inventory, vendor_origins):
     if 'us' in processing_filenames:
         us_filename = processing_filenames['us']
         convert_xlsx_to_xls(us_filename, processing_dir, upload_directory)
@@ -238,22 +244,51 @@ def prep_files_for_submission(processing_filenames, processing_dir, upload_direc
         ca_filename = processing_filenames['ca']
         convert_xlsx_to_xls(ca_filename, processing_dir, upload_directory)
     result = 'files ready'
-    display_final_message(result, processing_filenames, upload_directory, requested_inventory, vendor_origins)
+    display_final_message(result, processing_filenames, processing_dir, upload_directory, accepted_inventory, vendor_origins)
 
 
-def display_final_message(result, processing_filenames, upload_directory, requested_inventory, vendor_origins):
-    print("display_final_message")
+def display_final_message(result, processing_filenames, processing_dir, upload_directory, accepted_inventory, vendor_origins):
     clear_frame(inventory_frame)
+    clear_processing_directory(processing_dir)
     final_message_container = ttk.Frame(message_frame)
     final_message_container.grid(row=0, column=0, columnspan=3, pady=5)
-    # Buttons Frame
-    button_frame = ttk.Frame(message_frame)
-    button_frame.grid(row=1, column=0, columnspan=3, pady=10)
-    copy_button = ttk.Button(button_frame, text="Copy", command=lambda: copy_to_clipboard(requested_inventory, vendor_origins))
-    copy_button.pack(side=tk.LEFT, padx=5)
-    clear_button = ttk.Button(button_frame, text="Clear", command=reset)
-    clear_button.pack(side=tk.LEFT, padx=5)
 
+    if accepted_inventory:
+        # Create a frame for the Treeview with a scrollbar
+        tree_frame = ttk.Frame(final_message_container)
+        tree_frame.grid(row=0, column=0, columnspan=3, padx=5, pady=5)
+
+        # Create a scrollbar
+        tree_scroll = ttk.Scrollbar(tree_frame)
+        tree_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Determine the number of rows in accepted_inventory and set a maximum display limit
+        max_display_rows = 10
+        num_rows = min(len(accepted_inventory), max_display_rows)
+
+        # Create Treeview for confirmed inventory
+        tree = ttk.Treeview(tree_frame, columns=("Model Number", "Confirmed Quantity"), show='headings', height=num_rows, yscrollcommand=tree_scroll.set)
+        tree.heading("Model Number", text="Model Number")
+        tree.heading("Confirmed Quantity", text="Confirmed Quantity")
+        tree.column("Model Number", anchor="center", width=150)
+        tree.column("Confirmed Quantity", anchor="center", width=150)
+
+        # Configure the scrollbar
+        tree_scroll.config(command=tree.yview)
+
+        # Sort the accepted_inventory dictionary by model_number
+        sorted_inventory = sorted(accepted_inventory.items())
+
+        # Populate Treeview with sorted accepted inventory data
+        for model_number, confirmed_qty in sorted_inventory:
+            tree.insert('', 'end', values=(model_number, confirmed_qty))
+
+        tree.pack(fill=tk.BOTH, expand=True)
+        table_row = 1  # Set the row for the message below the table
+    else:
+        table_row = 0  # Set the row for the message at the top if no table
+
+    # Message label
     if len(processing_filenames) == 2:
         file_plurality = "files"
     else:
@@ -272,19 +307,34 @@ def display_final_message(result, processing_filenames, upload_directory, reques
             f"All order requests were under the minimum threshold - please submit the following {file_plurality} to cancel all order requests:\n\n"
             + "\n".join(filenames)
             + f"\n\nDirectory: {upload_directory}"
-        )    
+        )
+    elif not accepted_inventory:
+        message = (
+            f"No orders were accepted - please submit the following {file_plurality} to cancel all order requests:\n\n"
+            + "\n".join(filenames)
+            + f"\n\nDirectory: {upload_directory}"
+        )
     elif result == "files ready":
         message = (
             f"File processing complete - please submit the following {file_plurality} to complete Amazon Order Confirmation Process:\n\n"
             + "\n".join(filenames)
             + f"\n\nDirectory: {upload_directory}"
         )
-    ttk.Label(final_message_container, text=message, anchor="center", justify="center").grid(row=0, column=0, columnspan=3, pady=20)
+    ttk.Label(final_message_container, text=message, anchor="center", justify="center").grid(row=table_row, column=0, columnspan=3, pady=20)
+
+    # Buttons Frame
+    button_frame = ttk.Frame(message_frame)
+    button_frame.grid(row=table_row + 1, column=0, columnspan=3, pady=10)
+    if accepted_inventory:
+        copy_button = ttk.Button(button_frame, text="Copy Confirmed Items", command=lambda: copy_to_clipboard(accepted_inventory, vendor_origins))
+        copy_button.pack(side=tk.LEFT, padx=5)
+    clear_button = ttk.Button(button_frame, text="Clear", command=reset)
+    clear_button.pack(side=tk.LEFT, padx=5)
+
     message_frame.pack(fill=tk.BOTH, expand=True)
 
 
 def hide_order_value_edit_section(hide=True):
-    print("hide_order_value_edit_section")
     if hide:
         order_value_entry_us.pack_forget()
         change_button_us.pack_forget()
@@ -298,10 +348,12 @@ def hide_order_value_edit_section(hide=True):
         order_value_entry_ca.pack(side=tk.LEFT, padx=5)
         change_button_ca.pack(side=tk.LEFT, padx=5)
 
+
 def clear_frame(frame):
     for widget in frame.winfo_children():
         widget.destroy()
     frame.pack_forget()
+
 
 def reset():
     hide_order_value_edit_section(False)
@@ -435,11 +487,13 @@ def setup_gui():
 
     root.mainloop()
 
+
 def update_canvas_window(canvas, frame, canvas_window):
     new_width = canvas.winfo_width()
     canvas.itemconfig(canvas_window, width=new_width)  
     frame.update_idletasks()  
     adjust_frame_center(canvas, frame, canvas_window)
+
 
 def adjust_frame_center(canvas, frame, canvas_window):
     canvas_width = canvas.winfo_width()
@@ -447,6 +501,7 @@ def adjust_frame_center(canvas, frame, canvas_window):
     coord_x = max((canvas_width - frame_width) // 2, 0)
     canvas.coords(canvas_window, coord_x, 0)
     canvas.configure(scrollregion=canvas.bbox("all"))
+
 
 def on_inner_frame_configure(event, canvas):
     canvas.configure(scrollregion=canvas.bbox("all"))

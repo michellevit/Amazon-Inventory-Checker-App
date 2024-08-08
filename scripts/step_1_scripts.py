@@ -9,7 +9,6 @@ from tkinter import messagebox
 import xlrd
 
 
-
 def convert_xls_to_xlsx(original_path, currency, processing_dir):
     # Read the original workbook using xlrd
     book_xls = xlrd.open_workbook(original_path, formatting_info=True)
@@ -145,7 +144,9 @@ def copy_to_clipboard(inventory_dict, vendor_origins):
         messagebox.showinfo("Clipboard", "No requests - all orders below threshold or none requested.")
     else:
         clipboard_text = f"{vendor_origins} - Requested Items:\n"
-        lines = [f"{model}: {quantity}" for model, quantity in inventory_dict.items()]
+        # Sort the inventory_dict by key (model) in alphabetical order
+        sorted_inventory = sorted(inventory_dict.items())
+        lines = [f"{model}: {quantity}" for model, quantity in sorted_inventory]
         clipboard_text += "\n".join(lines)
         pyperclip.copy(clipboard_text)
         messagebox.showinfo("Clipboard", "Inventory data copied to clipboard!")

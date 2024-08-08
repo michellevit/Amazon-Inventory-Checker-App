@@ -11,8 +11,10 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
 
 ## Table of Contents
 - [Technologies Used](#technologies-used)
-- [How to Use](#how-to-use)
-- [How to Create a Virtual Environment](#how-to-venv)
+- [How To Install the Program](#how-to-install)
+- [How To Use the Program](#how-to-use)
+- [How To Edit the Program](#how-to-edit)
+- [How To Create a Virtual Environment](#how-to-venv)
 - [Troubleshooting](#troubleshooting)
 - [To Do](#to-do)
 - [Credits](#credits)
@@ -24,17 +26,27 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
 - OpenPyXL Library
 
 
-## How to Use<a name="how-to-use"></a>
+## How To Install the Program<a name="how-to-install"></a>
+- to do
+
+
+## How To Use the Program<a name="how-to-use"></a>
+- to do
+
+
+## How To Edit the Program<a name="how-to-edit"></a>
 - After making code changes to file_processor.py - run: 
   - `.\rebuild-app.bat`
-  - Note: The virtual environment must be activated:
+  - Note: The virtual environment must be created and activated:
+    - To create the program follow [How To Create The Virtual Environment](#how-to-venv)
     - Open a terminal and navigate to the project's root dir 
     - Run: `.\venv\Scripts\activate`
-- To run the app form the command line: 
+- To run the app form the command line (to see print statements): 
   - `.\dist\file_processor.exe`
 
 
-## How to Create a Virtual Environment<a name="how-to-venv"></a>
+## How To Create a Virtual Environment<a name="how-to-venv"></a>
+* Note: this is needed for editing the program, not running the program.
 - Ensure Python is installed on your system
 - Open a terminal
 - Navigate to project's root directory
@@ -48,75 +60,10 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
 - Make sure app is closed before running `.\rebuild-app`
 
 
-## To Do<a name="to-do"></a>
+## To Do<a name="troubleshooting"></a>
+- How to install instructions
+- How to use instructions
 
-- copy inventory after submitted should be updated to the confirmed qtys
-
-- CASES:
-  - 1 file entered with requested items, must be submitted
-  - 1 file entered, but all below threshold -> submit empty form
-
-  - 2 files entered both with requested items, both must be submitted 
-  - 2 files entered, all below threshold -> submit empty forms
-
-- First pass: 
-  - loop both sheets (new sheets): us sheet + ca sheet:
-    - for each line item, if model_number in items_to_cancel dict
-      - yes: 
-        - create var: model_number
-        - create var: order_number
-        - create var: quantity_confirmed (col L)
-        - create var one_unit_cost (col I)
-        - create var: min_order_value for that currency
-        - create var order_value[model_number]
-        - remove 1 unit cost from the new order_value var
-        - while quantity_confirmed > 0 and items_to_cancel[model_number] > 0 and order_value_var_ not below min_threshold:
-            - remove 1 unit from 'Quantity Confirmed' col
-            - remove 1 unit from quantity_confirmed var
-            - remove 1 unit from items_to_cancel[model_number] dict
-            - remove 1 unit from order_value[order_number] dict
-            - if value of items_to_cancel[model_number] is 0 then remove entry from dict
-- Second pass:
-  - loop both sheets (new sheets): us sheet + ca sheet:
-    - If still items in the items_to_cancel dict
-    - remove entries in order_value_dict with value of zero 
-    - organize order_value_dict form lowest value to highest value
-    - for order in order_value_dict:
-      - for each line in sheet, if it matches the order number:
-        - check if the model_number is in the units_to_cancel dict:
-          - yes: 
-            - create var: model_number
-            - create var: order_number
-            - create var: quantity_confirmed (col L)
-            - create var one_unit_cost (col I)
-            - create var: min_order_value for that currency
-            - create var order_value[model_number]
-            - while quantity_confirmed > 0 and items_to_cancel[model_number] > 0: 
-              - remove 1 unit from 'Quantity Confirmed' col
-              - remove 1 unit from quantity_confirmed var
-              - remove 1 unit from items_to_cancel[model_number] dict
-              - remove 1 unit from order_value[order_number] dict
-              - if value of items_to_cancel[model_number] is 0 then remove entry from dict
-- Third pass: 
-  - loop both sheets (new sheets): us sheet + ca sheet:
-    - Tabulate new order_value_dict based on new order values
-    - Tabulate a new order_to_cancel array (based on currency (col AF) min_order_value)
-    - For each line item: 
-      - if order_number in orders_to_cancel array:
-        - yes:
-          - set 'Quantity Confirmed' col quantity to 0
-          - change 'Availability Status' col value to 'CA - Cancelled: Not yet available'
-  - Fourth pass: 
-  - convert temp sheet(s) to .xls format
-  - rename file "Completed Inventory Sheet For Amazon Submission - [currency]"
-  - create new message for user "Inventory reports are complete - please submit the report(s) *list report(s)* 
-  to Amazon Vendor Central 
-  - Replace 'Inventory Frame':
-    - Columns: Model Number and Quantity Confirmed
-    - remove form entry fields
-    - remove submit button
-    - modify copy message to: 'Amazon US/CA Confirmed Items' 
-- Edge Case: no orders over min_order_value -> display_inventory_form()
 
 ## Credits<a name="credits"></a>
 Michelle Flandin
