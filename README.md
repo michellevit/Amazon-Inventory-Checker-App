@@ -4,6 +4,7 @@
 ![Python Version](https://img.shields.io/badge/Python-3.10.4-ffdb4f.svg)
 ![openpyxl](https://img.shields.io/badge/OpenPyXL-3.0.9-206e47.svg)
 ![Tkinter](https://img.shields.io/badge/Tkinter-3A77A8.svg)
+![PyInstaller](https://img.shields.io/badge/PyInstaller-4.7-8CA1AF.svg)
 
 
 An application that intakes an Amazon order request spreadsheet, calculates the total requested inventory, allows users to input their actual inventory, and calculates the optimal orders to confirm based on inventory and the minimum order value threshold (to keep shipping costs reasonable).
@@ -24,26 +25,17 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
 - Python (3.10.0)
 - Tkinter
 - OpenPyXL Library
+- PyInstaller
 
 
 ## How To Install the Program<a name="how-to-install"></a>
 - Open the GitHub and save the project into a folder
 - Open the app-build.bat and make sure the DEBUG value is set to FALSE
-- Create the shortcut: 
-  - Open the project root directory
-  - Right click the file 'app_shortcut.vbs'
-  - Select 'Create shortcut' (if this option is not immediately visible click 'Show more options')
-  - Right click the new shortcut
-  - Select 'Properties'
-  - In the 'Shortcut' tab, select 'Change icon'
-  - In the 'Change Icon' dialog, select 'Browse'
-  - Select the .ico file in the resources subfolder of the project
-  - Rename the shortcut 'Amazon Checker'
-  - Move the shortcut to the desktop (or wherever is convenient)
+- Run the file 'app-installer.bat' to create a Desktop shortcut for the program
 
 
 ## How To Use the Program<a name="how-to-use"></a>
-- to do
+- TO DO
 
 
 ## How To Edit the Program<a name="how-to-edit"></a>
@@ -51,11 +43,17 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
 - After making code changes to file_processor.py - run: 
   - `.\app-build.bat`
   - Note: The virtual environment must be created and activated:
-    - To create the program follow [How To Create The Virtual Environment](#how-to-venv)
-    - Open a terminal and navigate to the project's root dir 
-    - Run: `.\venv\Scripts\activate`
+    - To create the virtual environment:
+      - Ensure Python3 is installed on your system
+      - Open a terminal
+      - Navigate to project's root directory
+      - Run: `python -m venv venv`
+      - Run: `pip install -r requirements.txt`
+    - To activate the virtual environment: `.\venv\Scripts\activate`
+      - Open a terminal and navigate to the project's root dir 
+      - Run: `.\venv\Scripts\activate`
 - To run the app form the command line: 
-  - `.\run_app.bat`
+  - `.\AmazonChecker.exe
 
 
 ## How To Create a Virtual Environment<a name="how-to-venv"></a>
