@@ -72,13 +72,26 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
 
 
 ## To Do<a name="troubleshooting"></a>
+- store all the accepted inventory (available inventory from the form) in a dict
+- after the second PASS go through and get the confirmed_inventory dict
+- create a new dict called extra_inventory
+- if there is extra_inventory:
+  - step 1:
+    - create a new dict called accepted_orders with orders that have been accepted
+      - if any of the accepted orders have cancelled units and there are units in extra_inventory fill
+      - fill until either is full/empty
+  - step 2:
+    - if there is still extra_inventory:
+      - go through non_accepted orders
+      - go through the entire order and fill it up with extra_inventory
+      - if the order goes over min_order_val
+- go through all the orders which
 - How to install instructions
 - How to use instructions
 
 
 ## Credits<a name="credits"></a>
 Michelle Flandin
-
 
 
 Project Directory:

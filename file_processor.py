@@ -236,7 +236,7 @@ def submit_inventory(entries, requested_inventory, processing_filenames, process
     try:
         units_to_cancel = calculate_units_to_cancel(requested_inventory, available_inventory)
         if units_to_cancel:
-            accepted_inventory = cancel_out_of_stock_units(units_to_cancel, processing_filenames, processing_dir, min_order_value_us, min_order_value_ca)
+            accepted_inventory = cancel_out_of_stock_units(units_to_cancel, available_inventory, processing_filenames, processing_dir, min_order_value_us, min_order_value_ca)
         else:
             accepted_inventory = requested_inventory
         prep_files_for_submission(processing_filenames, processing_dir, upload_directory, accepted_inventory, vendor_origins)
