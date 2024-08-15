@@ -30,7 +30,7 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
 
 ## How To Install the Program<a name="how-to-install"></a>
 - Open the GitHub and save the project into a folder
-- Open the app-build.bat and make sure the DEBUG value is set to FALSE
+- Open the app-builder.bat and make sure the DEBUG value is set to FALSE
 - Run the file 'app-installer.bat' to create a Desktop shortcut for the program
 
 
@@ -39,36 +39,34 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
 
 
 ## How To Edit the Program<a name="how-to-edit"></a>
-- Open the app-build.bat and change DEBUG value to TRUE (to see print statements)
+- Open the app-builder.bat and change DEBUG value to TRUE (to see print statements)
 - After making code changes to file_processor.py - run: 
-  - `.\app-build.bat`
-  - Note: The virtual environment must be created and activated:
+  - `.\app-builder.bat`
+  - Note 1: For unsuccessful build issues, see [Troubleshooting section](#troubleshooting)
+  - Note 2: The virtual environment must be created and activated to run the build script (but not 
+  needed for running the program itself due to pyinstaller):
     - To create the virtual environment:
       - Ensure Python3 is installed on your system
       - Open a terminal
       - Navigate to project's root directory
       - Run: `python -m venv venv`
       - Run: `pip install -r requirements.txt`
-    - To activate the virtual environment: `.\venv\Scripts\activate`
+    - To activate the virtual environment:
       - Open a terminal and navigate to the project's root dir 
       - Run: `.\venv\Scripts\activate`
 - To run the app form the command line: 
   - `.\AmazonChecker.exe
 
 
-## How To Create a Virtual Environment<a name="how-to-venv"></a>
-* Note: this is needed for editing the program, not running the program.
-- Ensure Python is installed on your system
-- Open a terminal
-- Navigate to project's root directory
-- Run: `python -m venv venv`
-- Activate the virtual environment: `.\venv\Scripts\activate`
-- If you have a requirements.txt file:
-  - Run: `pip install -r requirements.txt`
-
-
 ## Troubleshooting<a name="troubleshooting"></a>
-- Make sure app is closed before running `.\app-build`
+- Make sure app is closed before running `.\app-builder`
+- If app-builder.bat encounters the error `Operation did not complete successfully because the file contains a virus or potentially unwanted software.`
+  - This occurs due to pyinstaller being seen as a threat, so you must exclude the dir where you are building the executable from the antivirus software:
+    - Open Windows Security.
+    - Go to "Virus & threat protection."
+    - Click on "Manage settings" under Virus & threat protection settings.
+    - Scroll down to "Exclusions" and click on "Add or remove exclusions."
+    - Click "Add an exclusion" and select "Folder," then navigate to your project directory.
 
 
 ## To Do<a name="troubleshooting"></a>

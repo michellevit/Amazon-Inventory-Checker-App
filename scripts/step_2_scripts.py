@@ -1,12 +1,11 @@
 # step_2_scripts.py
 
-import pprint
 import os
 from openpyxl import load_workbook
 from openpyxl.workbook import Workbook
 from openpyxl.utils.datetime import from_excel
 import xlwt
-
+import sys
 
 def calculate_units_to_cancel(requested_inventory, available_inventory):
     units_to_cancel = {}
@@ -33,18 +32,21 @@ def cancel_out_of_stock_units(units_to_cancel, available_inventory, processing_f
     
     # Get order values
     order_value_dict = create_order_value_dict(new_sheet, order_value_dict)
-
     # First Pass: remove OOS units without putting orders below threshold (+ update order_value_dict)
     units_to_cancel, order_value_dict = remove_oos_units_above_threshold(new_sheet, units_to_cancel, order_value_dict, min_order_value_us, min_order_value_ca)
-    
     # If more units need to be cancelled
+    
     if units_to_cancel: 
         # sort order value dict low to high
         sorted_order_value_list = sorted(order_value_dict.items(), key=lambda item: item[1])
         # sort new sheet low to high
-        sort_sheet_by_order_value(new_sheet, sorted_order_value_list)
+        sort_sheet_by_order_value(new_sheet, sorted_order_value_list, new_workbook)
         # Second Pass: iterate through temp sheet and remove remianing OOS units
         remove_oos_units_below_threshold(new_sheet, units_to_cancel)
+        # Get updated order values
+        order_value_dict = create_order_value_dict(new_sheet, order_value_dict)
+        # Cancel orders below the minimum threshold
+        cancel_orders_below_min_again(new_sheet, min_order_value_us, min_order_value_ca, order_value_dict)
 
     # Update the global inventory_dict (for the copy function)
     confirmed_inventory_dict = get_confirmed_inventory(new_sheet)
@@ -69,7 +71,6 @@ def cancel_out_of_stock_units(units_to_cancel, available_inventory, processing_f
     # Save the new_sheet for debugging       
     new_file_path = os.path.join(processing_dir, 'Combined-Orders-Processing.xlsx')
     new_workbook.save(new_file_path)
-    
     return confirmed_inventory_dict
 
 
@@ -84,6 +85,7 @@ def copy_data_to_new_sheet(reference_sheet, new_sheet, start_row):
 
 
 def create_order_value_dict(sheet, order_value_dict):
+    order_value_dict = {}
     for row in range(1, sheet.max_row + 1):
         order_number = sheet[f'A{row}'].value
         list_price = sheet[f'I{row}'].value
@@ -131,19 +133,27 @@ def remove_oos_units_above_threshold(sheet, units_to_cancel, order_value_dict, m
     return units_to_cancel, order_value_dict
             
 
-def sort_sheet_by_order_value(sheet, sorted_order_value_list):
-    rows = []
-    for row in sheet.iter_rows(min_row=4, max_row=sheet.max_row, values_only=True):
-        rows.append(row)
-    order_value_dict = {order: value for order, value in sorted_order_value_list}
-    rows.sort(key=lambda row: order_value_dict.get(row[0], float('inf')))
-    for i, row in enumerate(rows, start=4):
-        for j, value in enumerate(row, start=1):
-            sheet.cell(row=i, column=j, value=value)
+def sort_sheet_by_order_value(sheet, sorted_order_value_list, new_workbook):
+    temp_sheet = new_workbook.create_sheet("TempSorted")
+    new_row_idx = 1
+    for order_number, _ in sorted_order_value_list:
+        for row in sheet.iter_rows(min_row=1, max_row=sheet.max_row, values_only=False):
+            if row[0].value == order_number:  # Assuming order_number is in the first column (column A)
+                for col_idx, cell in enumerate(row, start=1):
+                    temp_sheet.cell(row=new_row_idx, column=col_idx, value=cell.value)
+                new_row_idx += 1
+    for row in sheet.iter_rows(min_row=1, max_row=sheet.max_row):
+        for cell in row:
+            cell.value = None
+    for row_idx, row in enumerate(temp_sheet.iter_rows(min_row=1, max_row=temp_sheet.max_row, values_only=False), start=1):
+        for col_idx, cell in enumerate(row, start=1):
+            sheet.cell(row=row_idx, column=col_idx, value=cell.value)
+    new_workbook.remove(temp_sheet)
 
 
 def remove_oos_units_below_threshold(sheet, units_to_cancel):
     for row in range(1, sheet.max_row + 1):
+        order_number = sheet[f'A{row}'].value
         if not units_to_cancel:
             break
         model_number = sheet[f'C{row}'].value
@@ -160,6 +170,22 @@ def remove_oos_units_below_threshold(sheet, units_to_cancel):
                 cancel_amount = cancel_amount - 1
             if units_to_cancel[model_number] == 0:
                 del units_to_cancel[model_number]
+
+
+def cancel_orders_below_min_again(sheet, min_order_value_us, min_order_value_ca, order_value_dict):
+    for row in range(1, sheet.max_row + 1):
+        if not sheet[f'A{row}'].value:
+            break
+        order_number = sheet[f'A{row}'].value
+        model_number = sheet[f'C{row}'].value
+        currency = sheet[f'AF{row}'].value
+        if currency == "USD":
+            minimum = int(min_order_value_us.get())
+        else: 
+            minimum = int(min_order_value_ca.get())
+        if order_value_dict[order_number] < minimum:
+            sheet[f'L{row}'].value = 0.0
+            sheet[f'S{row}'].value = "CA - Cancelled: Not yet available"        
 
 
 def get_confirmed_inventory(sheet):
