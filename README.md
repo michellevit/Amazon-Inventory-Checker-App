@@ -29,13 +29,17 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
 
 
 ## How To Install the Program<a name="how-to-install"></a>
-- Open the GitHub and save the project into a folder
-- Open the app-builder.bat and make sure the DEBUG value is set to FALSE
-- Run the file 'app-installer.bat' to create a Desktop shortcut for the program
+- Open the [project's GitHub repository](https://github.com/michellevit/Amazon-Inventory-Checker-App)
+- Select the green 'Code' button, and select 'Download ZIP'
+- Find the newly downloaded zip folder (in the Download tab, select 'Show in folder')
+- Right click the .zip folder, click 'Extract All...', and select the desired destination folder for the application
+- Open the unzipped folder and double-click the 'app-installer.bat' file
+  - A new shortcut will be created on the Desktop for the application
+  - Note: if you move the location of the application folder, you will need to delete the shortcut and run 'app-installer.bat' again
 
 
 ## How To Use the Program<a name="how-to-use"></a>
-- TO DO
+- To do
 
 
 ## How To Edit the Program<a name="how-to-edit"></a>
@@ -56,36 +60,23 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
       - Run: `.\venv\Scripts\activate`
 - To run the app form the command line: 
   - `.\AmazonChecker.exe
+- Note: After the program is done being edited, open the app-builder.bat and make sure the DEBUG value is set to FALSE
 
 
 ## Troubleshooting<a name="troubleshooting"></a>
-- Make sure app is closed before running `.\app-builder`
-- If app-builder.bat encounters the error `Operation did not complete successfully because the file contains a virus or potentially unwanted software.`
+- If `.\app-builder` does not work:
+  - Make sure the app is closed and the spreadsheets being used are closed
+- If app-builder.bat encounters the error `Operation did not complete successfully because the file contains a virus or potentially unwanted software.`:
   - This occurs due to pyinstaller being seen as a threat, so you must exclude the dir where you are building the executable from the antivirus software:
     - Open Windows Security.
     - Go to "Virus & threat protection."
     - Click on "Manage settings" under Virus & threat protection settings.
     - Scroll down to "Exclusions" and click on "Add or remove exclusions."
     - Click "Add an exclusion" and select "Folder," then navigate to your project directory.
-
-
-## To Do<a name="troubleshooting"></a>
-- store all the accepted inventory (available inventory from the form) in a dict
-- after the second PASS go through and get the confirmed_inventory dict
-- create a new dict called extra_inventory
-- if there is extra_inventory:
-  - step 1:
-    - create a new dict called accepted_orders with orders that have been accepted
-      - if any of the accepted orders have cancelled units and there are units in extra_inventory fill
-      - fill until either is full/empty
-  - step 2:
-    - if there is still extra_inventory:
-      - go through non_accepted orders
-      - go through the entire order and fill it up with extra_inventory
-      - if the order goes over min_order_val
-- go through all the orders which
-- How to install instructions
-- How to use instructions
+- If the minimum order value is having issues or if you move the location of the application folder:
+  - Delete the app shortcut and run 'app-installer.bat' again
+- If the terminal opens after starting the program:
+  - Make sure the DEBUG value is set to FALSE in app-builder.bat
 
 
 ## Credits<a name="credits"></a>
