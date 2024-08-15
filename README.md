@@ -90,18 +90,3 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
 
 ## Credits<a name="credits"></a>
 Michelle Flandin
-
-
-Project Directory:
-Amazon-Inventory-Checker-App
-| - build/
-| - dist/
-| | - file_processor
-| - processing
-| - resources
-| | - app_icon.ico
-| - uploaded_files/
-| - venv/
-| - file_processor.py
-| - file_processor.spec
-| - requirements.txt
