@@ -33,6 +33,7 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
 - Select the green 'Code' button, and select 'Download ZIP'
 - Find the newly downloaded zip folder (in the Download tab, select 'Show in folder')
 - Right click the .zip folder, click 'Extract All...', and select the desired destination folder for the application
+   - Note: make sure to save the folder directly onto your personal computer, not on a remote server (due to necessary file permissions).
 - Open the unzipped folder and double-click the 'app-installer.bat' file
   - A new shortcut will be created on the Desktop for the application
   - Note: if you move the location of the application folder, you will need to delete the shortcut and run 'app-installer.bat' again
