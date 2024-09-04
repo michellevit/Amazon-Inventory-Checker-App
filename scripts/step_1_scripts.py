@@ -139,11 +139,14 @@ def find_vendor_origins(submitted_files):
         return "Amazon CA"
 
 
-def copy_to_clipboard(inventory_dict, vendor_origins):
+def copy_to_clipboard(inventory_dict, vendor_origins, is_confirmed):
     if not inventory_dict:
         messagebox.showinfo("Clipboard", "No requests - all orders below threshold or none requested.")
     else:
-        clipboard_text = f"{vendor_origins} - Requested Items:\n"
+        if is_confirmed == False:
+            clipboard_text = f"{vendor_origins} - Requested Items:\n"
+        else: 
+            clipboard_text = f"{vendor_origins} - Confirmed Items:\n"
         # Sort the inventory_dict by key (model) in alphabetical order
         sorted_inventory = sorted(inventory_dict.items())
         lines = [f"{model}: {quantity}" for model, quantity in sorted_inventory]

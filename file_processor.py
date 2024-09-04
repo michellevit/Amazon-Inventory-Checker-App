@@ -210,7 +210,7 @@ def display_inventory_form(requested_inventory, vendor_origins, processing_filen
     button_frame.grid(row=1, column=0, columnspan=3, pady=10) 
     clear_button = ttk.Button(button_frame, text="Clear", command=reset)
     clear_button.pack(side=tk.LEFT, padx=5)  
-    copy_button = ttk.Button(button_frame, text="Copy", command=lambda: copy_to_clipboard(requested_inventory, vendor_origins))
+    copy_button = ttk.Button(button_frame, text="Copy", command=lambda: copy_to_clipboard(requested_inventory, vendor_origins, False))
     copy_button.pack(side=tk.LEFT, padx=5)
     submit_button = ttk.Button(button_frame, text="Submit", command=lambda: submit_inventory(entries, requested_inventory, processing_filenames, processing_dir, upload_directory, vendor_origins))
     submit_button.pack(side=tk.LEFT, padx=5)
@@ -335,7 +335,7 @@ def display_final_message(result, processing_filenames, processing_dir, upload_d
     button_frame = ttk.Frame(message_frame)
     button_frame.grid(row=table_row + 1, column=0, columnspan=3, pady=10)
     if accepted_inventory:
-        copy_button = ttk.Button(button_frame, text="Copy confirmed items", command=lambda: copy_to_clipboard(accepted_inventory, vendor_origins))
+        copy_button = ttk.Button(button_frame, text="Copy confirmed items", command=lambda: copy_to_clipboard(accepted_inventory, vendor_origins, True))
         copy_button.pack(side=tk.LEFT, padx=5)
     clear_button = ttk.Button(button_frame, text="Clear", command=reset)
     clear_button.pack(side=tk.LEFT, padx=5)
