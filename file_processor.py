@@ -60,7 +60,7 @@ def browse_files(currency):
         file_path_us.set(filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx *.xls")]))
     else:
         file_path_ca.set(filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx *.xls")]))
-    clear_frame(inventory_frame)  
+    clear_frame(inventory_frame)
 
 
 def process_files():
@@ -86,6 +86,7 @@ def process_files():
         submitted_files['ca'] = True
         upload_directory = os.path.dirname(file_path_ca.get())
         processing_filenames['ca'] = filename_processing
+    update_browse_button('process')
     remove_old_completed_files(upload_directory)
     vendor_origins = find_vendor_origins(submitted_files)
     hide_order_value_edit_section(True)
@@ -178,8 +179,7 @@ def change_order_value(currency):
 def check_if_orders_over_min(requested_inventory, vendor_origins, processing_filenames, processing_dir, upload_directory):
     # If no orders are over min_value threshold
     if all(value == 0.0 for value in requested_inventory.values()):
-        display_final_message("all below threshold", processing_filenames, upload_directory, requested_inventory, vendor_origins)
-        prep_files_for_submission(processing_filenames, processing_dir, upload_directory, requested_inventory, vendor_origins)
+        prep_files_for_submission(processing_filenames, processing_dir, upload_directory, requested_inventory, vendor_origins, result="all below threshold")
     else:
         display_inventory_form(requested_inventory, vendor_origins, processing_filenames, processing_dir, upload_directory)
 
@@ -239,20 +239,20 @@ def submit_inventory(entries, requested_inventory, processing_filenames, process
             accepted_inventory = cancel_out_of_stock_units(units_to_cancel, available_inventory, processing_filenames, processing_dir, min_order_value_us, min_order_value_ca)
         else:
             accepted_inventory = requested_inventory
+
         prep_files_for_submission(processing_filenames, processing_dir, upload_directory, accepted_inventory, vendor_origins)
     except PermissionError:
         messagebox.showerror("File Error", "The file is open. Please close the file before clicking submit.")
         return
 
 
-def prep_files_for_submission(processing_filenames, processing_dir, upload_directory, accepted_inventory, vendor_origins):
+def prep_files_for_submission(processing_filenames, processing_dir, upload_directory, accepted_inventory, vendor_origins, result="files ready"):
     if 'us' in processing_filenames:
         us_filename = processing_filenames['us']
         convert_xlsx_to_xls(us_filename, processing_dir, upload_directory)
     if 'ca' in processing_filenames: 
         ca_filename = processing_filenames['ca']
         convert_xlsx_to_xls(ca_filename, processing_dir, upload_directory)
-    result = 'files ready'
     display_final_message(result, processing_filenames, processing_dir, upload_directory, accepted_inventory, vendor_origins)
 
 
@@ -364,6 +364,36 @@ def clear_frame(frame):
     frame.pack_forget()
 
 
+def clear_file_input(country):
+    if country == 'us':
+        file_path_us.set('')
+    elif country == 'ca':
+        file_path_ca.set('')
+
+
+def update_browse_button(command):
+    if command == 'us':
+        if file_path_us.get():
+            clear_file_button_us.pack(side=tk.LEFT, padx=5, pady=5)
+            browse_button_us.pack_forget()
+        else:
+            browse_button_us.pack(side=tk.LEFT, padx=5, pady=5)
+            clear_file_button_us.pack_forget()
+    if command == 'ca':
+        if file_path_ca.get():
+            clear_file_button_ca.pack(side=tk.LEFT, padx=5, pady=5)
+            browse_button_ca.pack_forget()
+        else:
+            browse_button_ca.pack(side=tk.LEFT, padx=5, pady=5)
+            clear_file_button_ca.pack_forget()
+    if command == 'process':
+        browse_button_us.pack_forget()
+        clear_file_button_us.pack_forget()
+        browse_button_ca.pack_forget()
+        clear_file_button_ca.pack_forget()
+
+
+
 def reset():
     hide_order_value_edit_section(False)
     clear_frame(inventory_frame)
@@ -372,6 +402,7 @@ def reset():
     message_frame.pack_forget()
     file_path_us.set('')
     file_path_ca.set('')
+    process_button.pack(pady=10, before=separator)
 
 
 def on_inner_frame_configure(event):
@@ -383,8 +414,11 @@ def setup_gui():
     root.title("Amazon Confirmation Processor")
     root.geometry('850x600')
 
-    global file_path_us, file_entry_us, min_order_value_us, temp_order_value_us
-    global file_path_ca, file_entry_ca, min_order_value_ca, temp_order_value_ca
+    global file_path_us, file_entry_us, browse_button_us, clear_file_button_us
+    global file_path_ca, file_entry_ca, browse_button_ca, clear_file_button_ca
+    global min_order_value_us, temp_order_value_us
+    global min_order_value_ca, temp_order_value_ca
+    global process_button, separator
     global order_value_label_us, order_value_entry_us, change_button_us
     global order_value_label_ca, order_value_entry_ca, change_button_ca
     global inventory_frame, entries, canvas
@@ -435,7 +469,7 @@ def setup_gui():
     file_entry_us = ttk.Entry(file_input_frame_us, textvariable=file_path_us, state='readonly', width=50, style='White.TEntry')
     file_entry_us.pack(side=tk.LEFT, padx=5, pady=5)
     browse_button_us = ttk.Button(file_input_frame_us, text="Browse", command=lambda: browse_files('us'))
-    browse_button_us.pack(side=tk.LEFT, padx=5, pady=5)
+    clear_file_button_us = ttk.Button(file_input_frame_us, text="Clear", command=lambda: clear_file_input('us'))
 
     # US Minimum Order Value Frame
     order_value_frame_us = ttk.Frame(us_container_frame, padding=5)
@@ -460,7 +494,7 @@ def setup_gui():
     file_entry_ca = ttk.Entry(file_input_frame_ca, textvariable=file_path_ca, state='readonly', width=50, style='White.TEntry')
     file_entry_ca.pack(side=tk.LEFT, padx=5, pady=5)
     browse_button_ca = ttk.Button(file_input_frame_ca, text="Browse", command=lambda: browse_files('ca'))
-    browse_button_ca.pack(side=tk.LEFT, padx=5, pady=5)
+    clear_file_button_ca = ttk.Button(file_input_frame_ca, text="Clear", command=lambda: clear_file_input('ca'))
 
     # CA Minimum Order Value Frame
     order_value_frame_ca = ttk.Frame(ca_container_frame, padding=5)
@@ -472,23 +506,28 @@ def setup_gui():
     change_button_ca = ttk.Button(order_value_frame_ca, text="Change", command=lambda: change_order_value('ca'))
     change_button_ca.pack(side=tk.LEFT)
 
+    # Browse/Clear Button
+    file_path_us.trace_add('write', lambda *args: update_browse_button('us'))
+    file_path_ca.trace_add('write', lambda *args: update_browse_button('ca'))
+    update_browse_button('us')
+    update_browse_button('ca')
+
     # Process Button
     process_button = ttk.Button(inner_main_frame, text="Process", command=process_files)
     process_button.pack(pady=10)
 
     # Separator for visual distinction
-    ttk.Separator(inner_main_frame).pack(fill=tk.X, pady=10)
+    separator = ttk.Separator(inner_main_frame)
+    separator.pack(fill=tk.X, pady=(10, 10))
 
     # Inventory Frame
     inventory_frame = ttk.Frame(inner_main_frame)
-    process_button.pack(pady=10)
     inventory_frame.grid_columnconfigure(0, weight=1, minsize=150)
     inventory_frame.grid_columnconfigure(1, weight=1, minsize=150)
     inventory_frame.grid_columnconfigure(2, weight=1, minsize=150)
 
     # Message Frame
     message_frame = ttk.Frame(inner_main_frame)
-    process_button.pack(pady=10)
     message_frame.grid_columnconfigure(0, weight=1, minsize=450)
 
     root.update_idletasks()

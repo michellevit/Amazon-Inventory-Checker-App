@@ -45,23 +45,23 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
 
 ## How To Edit the Program<a name="how-to-edit"></a>
 - Open the app-builder.bat and change DEBUG value to TRUE (to see print statements)
-- After making code changes to file_processor.py - run: 
-  - `.\app-builder.bat`
+- Activate the Virtual Terminal - run: `.\venv\Scripts\activate`
+- After making code changes to the code - run: `.\app-builder.bat`
+- Run the app from the command line to see print statements in the terminal: `.\AmazonChecker.exe`
+- Troubleshooting Notes:
   - Note 1: For unsuccessful build issues, see [Troubleshooting section](#troubleshooting)
   - Note 2: The virtual environment must be created and activated to run the build script (but not 
-  needed for running the program itself due to pyinstaller):
-    - To create the virtual environment:
-      - Ensure Python3 is installed on your system
-      - Open a terminal
-      - Navigate to project's root directory
-      - Run: `python -m venv venv`
-      - Run: `pip install -r requirements.txt`
-    - To activate the virtual environment:
-      - Open a terminal and navigate to the project's root dir 
-      - Run: `.\venv\Scripts\activate`
-- To run the app form the command line: 
-  - `.\AmazonChecker.exe
-- Note: After the program is done being edited, open the app-builder.bat and make sure the DEBUG value is set to FALSE
+    needed for running the program itself due to pyinstaller):
+      - To create the virtual environment:
+        - Ensure Python3 is installed on your system
+        - Open a terminal
+        - Navigate to project's root directory
+        - Run: `python -m venv venv`
+        - Run: `pip install -r requirements.txt`
+      - To activate the virtual environment:
+        - Open a terminal and navigate to the project's root dir 
+        - Run: `.\venv\Scripts\activate`
+  - Note 3: After the program is done being edited, open the app-builder.bat and make sure the DEBUG value is set to FALSE
 
 
 ## Troubleshooting<a name="troubleshooting"></a>

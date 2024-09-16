@@ -63,10 +63,15 @@ def check_file_valid(workbook, currency):
     if sheet['A4'].value:
         if capitalized_currency not in sheet['AF4'].value:
             raise ValueError(f"Please enter the {capitalized_currency} file into the correct input.")
-        return True
-    else:
-        return False
-
+    for row in range(4, sheet.max_row + 1):
+        order_number = sheet[f'A{row}'].value
+        if not order_number:
+            break
+        model_number = sheet[f'C{row}'].value
+        if not model_number: 
+            product = sheet[f'F{row}'].value
+            raise ValueError(f"The file entered is not valid: Model Number value(s) missing in Column C for product '{product}'. Please update Vendor Central item.")
+    return True
 
 def cancel_orders_below_min(workbook, min_order_value, new_file_path, po_value_dict, orders_to_cancel_array):
     sheet = workbook['Line Items']

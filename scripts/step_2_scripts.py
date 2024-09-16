@@ -262,7 +262,7 @@ def convert_xlsx_to_xls(filename, processing_dir, upload_directory):
     processed_file_path = os.path.join(processing_dir, filename)
     processing_workbook = load_workbook(processed_file_path)
     reference_sheet = processing_workbook.active
-    
+    processing_workbook.close()
     completed_workbook = xlwt.Workbook()
     new_sheet = completed_workbook.add_sheet('Line Items')
 
@@ -278,7 +278,9 @@ def convert_xlsx_to_xls(filename, processing_dir, upload_directory):
     completed_filename = filename.replace('Processing.xlsx', 'Complete.xls')
     completed_file_path = os.path.join(upload_directory, completed_filename)
     completed_workbook.save(completed_file_path)
-    os.remove(processed_file_path)
+    
+    print("processing_workbook: ", processing_workbook)
+    print("processed_file_path: ", processed_file_path)
     return completed_workbook
 
 

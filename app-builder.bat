@@ -7,7 +7,7 @@ SETLOCAL
 
 REM Define DEBUG variable (set to TRUE for debugging, FALSE for production)
 REM Toggles whether to show print statements for debugging
-SET DEBUG=FALSE
+SET DEBUG=TRUE
 
 REM Ensure the script is run from the project root directory
 cd /d "%~dp0"
