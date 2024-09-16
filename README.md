@@ -10,10 +10,12 @@
 An application that intakes an Amazon order request spreadsheet, calculates the total requested inventory, allows users to input their actual inventory, and calculates the optimal orders to confirm based on inventory and the minimum order value threshold (to keep shipping costs reasonable).
 
 
+<a href="https://youtu.be/WcHKO0UPXGo?si=MWx0eaWaXHBHora6" target="_blank"><img src="https://img.shields.io/badge/YouTube-Demo-red?style=for-the-badge&logo=youtube&color=FF0000"></a>
+
+
 ## Table of Contents
 - [Technologies Used](#technologies-used)
 - [How To Install the Program](#how-to-install)
-- [How To Use the Program](#how-to-use)
 - [How To Edit the Program](#how-to-edit)
 - [How To Create a Virtual Environment](#how-to-venv)
 - [Troubleshooting](#troubleshooting)
@@ -39,10 +41,6 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
   - Note: if you move the location of the application folder, you will need to delete the shortcut and run 'app-installer.bat' again
 
 
-## How To Use the Program<a name="how-to-use"></a>
-- To do
-
-
 ## How To Edit the Program<a name="how-to-edit"></a>
 - Open the app-builder.bat and change DEBUG value to TRUE (to see print statements)
 - Activate the Virtual Terminal - run: `.\venv\Scripts\activate`
@@ -61,7 +59,7 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
       - To activate the virtual environment:
         - Open a terminal and navigate to the project's root dir 
         - Run: `.\venv\Scripts\activate`
-  - Note 3: After the program is done being edited, open the app-builder.bat and make sure the DEBUG value is set to FALSE
+  - Note 3: After the program is done being edited, open the app-builder.bat and make sure the DEBUG value is set to FALSE and run the app-builder again
 
 
 ## Troubleshooting<a name="troubleshooting"></a>
