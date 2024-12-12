@@ -17,7 +17,6 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
 - [Technologies Used](#technologies-used)
 - [How To Install the Program](#how-to-install)
 - [How To Edit the Program](#how-to-edit)
-- [How To Create a Virtual Environment](#how-to-venv)
 - [Troubleshooting](#troubleshooting)
 - [To Do](#to-do)
 - [Credits](#credits)
