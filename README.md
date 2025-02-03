@@ -15,8 +15,8 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
 
 ## Table of Contents
 - [Technologies Used](#technologies-used)
-- [How To Install the Program](#how-to-install)
-- [How To Edit the Program](#how-to-edit)
+- [How To Install the Program](#how-to-install-the-program)
+- [How To Edit the Program](#how-to-edit-the-program)
 - [Troubleshooting](#troubleshooting)
 - [To Do](#to-do)
 - [Credits](#credits)
@@ -29,7 +29,9 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
 - PyInstaller (6.6.0)
 
 
-## How To Install the Program<a name="how-to-install"></a>
+## How To Install the Program
+* Note: these instructions are intended for users who are using the app, but not editing the app
+  * Editing the app requires cloning a local copy of repo, installing Python, and creating/activating a virtual environment
 - Open the [project's GitHub repository](https://github.com/michellevit/Amazon-Inventory-Checker-App)
 - Select the green 'Code' button, and select 'Download ZIP'
 - Find the newly downloaded zip folder (in the Download tab, select 'Show in folder')

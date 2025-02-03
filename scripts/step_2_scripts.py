@@ -275,6 +275,9 @@ def convert_xlsx_to_xls(filename, processing_dir, upload_directory):
             else:
                 new_sheet.write(row_idx, col_idx, cell.value)
     
+    # Require sheet - no need for contents, but it must be added or else Amazon will reject the file
+    completed_workbook.add_sheet('Instructions')
+    
     completed_filename = filename.replace('Processing.xlsx', 'Complete.xls')
     completed_file_path = os.path.join(upload_directory, completed_filename)
     completed_workbook.save(completed_file_path)
