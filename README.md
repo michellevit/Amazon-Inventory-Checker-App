@@ -9,7 +9,7 @@ An application that intakes an Amazon order request spreadsheet, calculates the 
 
 <a href="https://youtu.be/WcHKO0UPXGo?si=MWx0eaWaXHBHora6" target="_blank"><img src="https://img.shields.io/badge/YouTube-Demo-red?style=for-the-badge&logo=youtube&color=FF0000"></a>
 
-![Amazon Inventory Checker Demo](resources/amazon-checker-demo-gif.gif)
+![Amazon Inventory Checker Demo](resources/amazon-checker-demo.gif)
 
 ## Table of Contents
 
